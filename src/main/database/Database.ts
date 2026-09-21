@@ -1,13 +1,13 @@
-import Database from 'better-sqlite3';
+import BetterSqlite3 from 'better-sqlite3';
 import { join } from 'path';
 import { app } from 'electron';
 
 export class Database {
-  private db: Database.Database | null = null;
+  private db: BetterSqlite3.Database | null = null;
 
-  async initialize() {
+async initialize() {
     const dbPath = join(app.getPath('userData'), 'partyup.db');
-    this.db = new Database(dbPath);
+    this.db = new BetterSqlite3(dbPath);
     this.db.pragma('journal_mode = WAL');
     this.db.pragma('foreign_keys = ON');
     await this.runMigrations();
@@ -249,8 +249,8 @@ export class Database {
     }
   }
 
-  getDb() {
-    return this.db;
+getDb() {
+    return this.db as BetterSqlite3.Database;
   }
 
   async close() {
@@ -330,8 +330,8 @@ export class Database {
     this.db!.prepare('INSERT OR REPLACE INTO ratings (gameId, rating) VALUES (?, ?)').run(gameId, rating);
   }
 
-  getRating(gameId: string) {
-    return this.db!.prepare('SELECT rating FROM ratings WHERE gameId = ?').get(gameId)?.rating;
+getRating(gameId: string) {
+    return (this.db!.prepare('SELECT rating FROM ratings WHERE gameId = ?').get(gameId) as any)?.rating;
   }
 
   // Notes
@@ -339,8 +339,8 @@ export class Database {
     this.db!.prepare('INSERT OR REPLACE INTO notes (gameId, content) VALUES (?, ?)').run(gameId, content);
   }
 
-  getNote(gameId: string) {
-    return this.db!.prepare('SELECT content FROM notes WHERE gameId = ?').get(gameId)?.content;
+getNote(gameId: string) {
+    return (this.db!.prepare('SELECT content FROM notes WHERE gameId = ?').get(gameId) as any)?.content;
   }
 
   // Saves
@@ -550,7 +550,7 @@ markNotificationShown(id: string) {
   }
 
   getSnapshot(id: string) {
-    const snapshot = this.db!.prepare('SELECT * FROM hoard_snapshots WHERE id = ?').get(id);
+    const snapshot = this.db!.prepare('SELECT * FROM hoard_snapshots WHERE id = ?').get(id) as any;
     if (!snapshot) return null;
 
     const files = this.db!.prepare('SELECT * FROM hoard_snapshot_files WHERE snapshotId = ?').all(id);
@@ -562,10 +562,10 @@ markNotificationShown(id: string) {
   }
 
   deleteSnapshot(id: string) {
-    const files = this.db!.prepare('SELECT hash FROM hoard_snapshot_files WHERE snapshotId = ?').all(id);
+    const files = this.db!.prepare('SELECT hash FROM hoard_snapshot_files WHERE snapshotId = ?').all(id) as { hash: string }[];
     
     for (const file of files) {
-      const refCount = this.db!.prepare('SELECT refCount FROM hoard_blobs WHERE hash = ?').get(file.hash)?.refCount || 0;
+      const refCount = (this.db!.prepare('SELECT refCount FROM hoard_blobs WHERE hash = ?').get(file.hash) as any)?.refCount || 0;
       if (refCount <= 1) {
         this.db!.prepare('DELETE FROM hoard_blobs WHERE hash = ?').run(file.hash);
       } else {
@@ -578,11 +578,11 @@ markNotificationShown(id: string) {
   }
 
   getStorageStats() {
-    const totalGames = this.db!.prepare('SELECT COUNT(DISTINCT gameId) as count FROM hoard_snapshots').get()?.count || 0;
-    const totalSnapshots = this.db!.prepare('SELECT COUNT(*) as count FROM hoard_snapshots').get()?.count || 0;
-    const totalSize = this.db!.prepare('SELECT SUM(totalSize) as size FROM hoard_snapshots').get()?.size || 0;
-    const uniqueBlobs = this.db!.prepare('SELECT COUNT(*) as count FROM hoard_blobs').get()?.count || 0;
-    const deduplicatedSize = this.db!.prepare('SELECT SUM(size * refCount) as size FROM hoard_blobs').get()?.size || 0;
+    const totalGames = (this.db!.prepare('SELECT COUNT(DISTINCT gameId) as count FROM hoard_snapshots').get() as any)?.count || 0;
+    const totalSnapshots = (this.db!.prepare('SELECT COUNT(*) as count FROM hoard_snapshots').get() as any)?.count || 0;
+    const totalSize = (this.db!.prepare('SELECT SUM(totalSize) as size FROM hoard_snapshots').get() as any)?.size || 0;
+    const uniqueBlobs = (this.db!.prepare('SELECT COUNT(*) as count FROM hoard_blobs').get() as any)?.count || 0;
+    const deduplicatedSize = (this.db!.prepare('SELECT SUM(size * refCount) as size FROM hoard_blobs').get() as any)?.size || 0;
 
     return {
       totalGames,

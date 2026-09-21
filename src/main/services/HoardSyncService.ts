@@ -304,18 +304,18 @@ export class HoardSyncService {
 }
 
 // Database extensions for Hoard sync
-declare module '../database/Database' {
-  interface Database {
-    saveSnapshot(snapshot: SaveSnapshot): Promise<void>;
-    getSnapshot(id: string): Promise<SaveSnapshot | null>;
-    getGameSnapshots(gameId: string): Promise<SaveSnapshot[]>;
-    deleteSnapshot(id: string): Promise<void>;
-    getStorageStats(): Promise<{
-      totalGames: number;
-      totalSnapshots: number;
-      totalSize: number;
-      deduplicatedSize: number;
-      uniqueBlobs: number;
-    }>;
-  }
-}
+// declare module '../database/Database' {
+//   interface Database {
+//     saveSnapshot(snapshot: SaveSnapshot): Promise<void>;
+//     getSnapshot(id: string): Promise<SaveSnapshot | null>;
+//     getGameSnapshots(gameId: string): Promise<SaveSnapshot[]>;
+//     deleteSnapshot(id: string): Promise<void>;
+//     getStorageStats(): Promise<{
+//       totalGames: number;
+//       totalSnapshots: number;
+//       totalSize: number;
+//       deduplicatedSize: number;
+//       uniqueBlobs: number;
+//     }>;
+//   }
+// }

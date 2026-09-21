@@ -1,5 +1,5 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, session, protocol } from 'electron';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -27,7 +27,7 @@ import { MetadataService } from './services/MetadataService.js';
 import { DownloadService } from './services/DownloadService.js';
 import { HoardSyncService } from './services/HoardSyncService.js';
 
-const __dirname = join(fileURLToPath(import.meta.url), '..');
+const __dirname = __dirname || process.cwd();
 
 const store = new Store({
   name: 'partyup-config',

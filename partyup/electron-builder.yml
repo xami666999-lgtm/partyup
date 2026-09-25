@@ -42,6 +42,10 @@ extraResources:
     to: plugins
     filter:
       - '**/*'
+  - from: node_modules/sql.js/dist
+    to: sql.js
+    filter:
+      - 'sql-wasm.wasm'
 extraFiles:
   - from: build/velo
     to: velo

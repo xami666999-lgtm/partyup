@@ -44,17 +44,38 @@ export class Database {
   private async ensureWasmFile() {
     try {
       await readFile(this.wasmPath);
+      return;
     } catch {
-      // Copy from sql.js package
-      const srcWasm = path.join(process.resourcesPath || process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+      // File doesn't exist locally, need to copy
+    }
+
+    // Try multiple possible locations for the WASM file
+    const possiblePaths = [
+      // Production: extraResources/sql.js/sql-wasm.wasm
+      path.join(process.resourcesPath, 'sql.js', 'sql-wasm.wasm'),
+      // Development: node_modules
+      path.join(process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm'),
+      // Alternative production path
+      path.join(path.dirname(process.execPath), 'sql.js', 'sql-wasm.wasm'),
+    ];
+
+    for (const srcWasm of possiblePaths) {
       try {
         await copyFile(srcWasm, this.wasmPath);
+        return;
       } catch {
-        // Fallback: download if not found locally
-        const response = await fetch('https://sql.js.org/dist/sql-wasm.wasm');
-        const buffer = await response.arrayBuffer();
-        await writeFile(this.wasmPath, Buffer.from(buffer));
+        // Try next path
       }
+    }
+
+    // Fallback: download if not found locally
+    try {
+      const response = await fetch('https://sql.js.org/dist/sql-wasm.wasm');
+      const buffer = await response.arrayBuffer();
+      await writeFile(this.wasmPath, Buffer.from(buffer));
+    } catch (error) {
+      console.error('Failed to download sql-wasm.wasm:', error);
+      throw new Error('Could not locate or download sql-wasm.wasm');
     }
   }
 

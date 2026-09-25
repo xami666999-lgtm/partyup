@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
 import { join } from 'path';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
@@ -10,7 +10,14 @@ import { initializeServices, shutdownServices, type Services } from './services/
 import { PluginManager } from './plugins/PluginManager.js';
 import { ThemeManager } from './theme/ThemeManager.js';
 import { Database } from './database/Database.js';
-import { setupAutoUpdater } from './services/UpdateService.js';
+import {
+  setupAutoUpdater,
+  checkForUpdates,
+  downloadUpdate,
+  getUpdateState,
+  installUpdate,
+  openReleases,
+} from './services/UpdateService.js';
 
 const store = new Store<Record<string, unknown>>({
   name: 'partyup-config',
@@ -42,6 +49,20 @@ app.on('second-instance', () => {
   mainWindow.show();
   mainWindow.focus();
 });
+
+function registerUpdateIpc() {
+  ipcMain.handle('update:get-state', async () => getUpdateState());
+  ipcMain.handle('update:check', async () => checkForUpdates(mainWindow));
+  ipcMain.handle('update:download', async () => downloadUpdate(mainWindow));
+  ipcMain.handle('update:install', async () => {
+    installUpdate();
+    return true;
+  });
+  ipcMain.handle('update:open-releases', async () => {
+    openReleases();
+    return true;
+  });
+}
 
 async function createWindow() {
   const mainWindowState = windowStateKeeper({
@@ -124,7 +145,7 @@ async function initializeApp() {
       pluginManager,
       themeManager
     );
-
+    registerUpdateIpc();
     setupAutoUpdater(mainWindow, store as any, log);
 
     log.info('PartyUp initialized');

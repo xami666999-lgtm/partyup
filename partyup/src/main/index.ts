@@ -1,35 +1,31 @@
-import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, session, protocol } from 'electron';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import { app, BrowserWindow, dialog, ipcMain } from 'electron';
+import { join } from 'path';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
 import { isDev } from './utils/env.js';
 import { setupIpcHandlers } from './ipc/index.js';
-import { initializeServices, Services, shutdownServices } from './services/index.js';
+import { initializeServices, shutdownServices, type Services } from './services/index.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { ThemeManager } from './theme/ThemeManager.js';
 import { Database } from './database/Database.js';
+import {
+  setupAutoUpdater,
+  checkForUpdates,
+  downloadUpdate,
+  getUpdateState,
+  installUpdate,
+  openReleases,
+} from './services/UpdateService.js';
 
-declare const __dirname: string;
-
-const store = new Store<any>({
+const store = new Store<Record<string, unknown>>({
   name: 'partyup-config',
   defaults: {
     windowBounds: { width: 1400, height: 900 },
     theme: 'partyup-dark',
     language: 'en',
-    steam: { enabled: true, apiKey: '', autoLogin: true },
-    torrent: { enabled: true, downloadPath: '', maxConnections: 100 },
-    emulators: { paths: {}, autoDetect: true },
-    library: { paths: [], autoScan: true },
-    cloudGaming: { services: {} },
-    optimization: { profiles: {} },
-    social: { enabled: true, platforms: [] },
-    discord: { enabled: true, richPresence: true },
-    updates: { autoCheck: true, autoDownload: true },
-    plugins: { enabled: [], marketplace: true },
+    updates: { autoCheck: true, autoDownload: false },
   },
 });
 
@@ -37,15 +33,41 @@ log.initialize({ preload: true });
 log.info('PartyUp starting...');
 
 let mainWindow: BrowserWindow | null = null;
-let pluginManager: PluginManager;
-let themeManager: ThemeManager;
-let database: Database;
-let services: any = null;
+let pluginManager: PluginManager | null = null;
+let themeManager: ThemeManager | null = null;
+let database: Database | null = null;
+let services: Services | null = null;
+
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) {
+  app.quit();
+}
+
+app.on('second-instance', () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+});
+
+function registerUpdateIpc() {
+  ipcMain.handle('update:get-state', async () => getUpdateState());
+  ipcMain.handle('update:check', async () => checkForUpdates(mainWindow));
+  ipcMain.handle('update:download', async () => downloadUpdate(mainWindow));
+  ipcMain.handle('update:install', async () => {
+    installUpdate();
+    return true;
+  });
+  ipcMain.handle('update:open-releases', async () => {
+    openReleases();
+    return true;
+  });
+}
 
 async function createWindow() {
   const mainWindowState = windowStateKeeper({
-    defaultWidth: store.get('windowBounds.width') as number,
-    defaultHeight: store.get('windowBounds.height') as number,
+    defaultWidth: 1400,
+    defaultHeight: 900,
   });
 
   mainWindow = new BrowserWindow({
@@ -55,6 +77,7 @@ async function createWindow() {
     height: mainWindowState.height,
     minWidth: 1000,
     minHeight: 600,
+    title: 'PartyUp',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
       color: '#1a1a2e',
@@ -66,9 +89,6 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      webSecurity: !isDev,
-      allowRunningInsecureContent: isDev,
-      experimentalFeatures: true,
     },
     show: false,
     backgroundColor: '#0f0f1a',
@@ -79,13 +99,6 @@ async function createWindow() {
 
   mainWindow.on('ready-to-show', () => {
     mainWindow?.show();
-    if (isDev) {
-      mainWindow?.webContents.openDevTools();
-    }
-  });
-
-  mainWindow.on('close', () => {
-    store.set('windowBounds', mainWindow?.getBounds());
   });
 
   mainWindow.on('closed', () => {
@@ -104,7 +117,11 @@ async function createWindow() {
 async function initializeApp() {
   try {
     database = new Database();
-    await database.initialize();
+    try {
+      await database.initialize();
+    } catch (dbError) {
+      log.error('Database failed to initialize, continuing without persistence:', dbError);
+    }
 
     pluginManager = new PluginManager();
     await pluginManager.loadPlugins();
@@ -112,81 +129,43 @@ async function initializeApp() {
     themeManager = new ThemeManager();
     await themeManager.initialize();
 
-    services = await initializeServices(store, database, pluginManager);
+    services = await initializeServices(store as any, database as Database, pluginManager);
 
-    // Create window after services initialized
     await createWindow();
 
-    // Now set the mainWindow reference in ThemeManager
-    if (mainWindow) {
+    if (mainWindow && themeManager) {
       (themeManager as any).mainWindow = mainWindow;
     }
 
-    setupIpcHandlers(mainWindow!, services, store, database, pluginManager, themeManager);
+    setupIpcHandlers(
+      mainWindow!,
+      services as any,
+      store as any,
+      database as Database,
+      pluginManager,
+      themeManager
+    );
+    registerUpdateIpc();
+    setupAutoUpdater(mainWindow, store as any, log);
 
-    setupAutoUpdater();
-
-    app.on('second-instance', () => {
-      if (mainWindow) {
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.focus();
-      }
-    });
-
-    if (!app.requestSingleInstanceLock()) {
-      app.quit();
-      return;
-    }
-
-    await app.whenReady();
-    await createWindow();
-
-    app.on('activate', async () => {
-      if (BrowserWindow.getAllWindows().length === 0) {
-        await createWindow();
-      }
-    });
-
-    app.on('before-quit', async () => {
-      if (services) {
-        await shutdownServices(services);
-      }
-    });
-
-    log.info('PartyUp initialized successfully');
+    log.info('PartyUp initialized');
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     log.error('Failed to initialize app:', error);
-    dialog.showErrorBox('PartyUp Error', `Failed to start: ${error.message}`);
+    dialog.showErrorBox('PartyUp Error', `Failed to start: ${message}`);
     app.quit();
   }
 }
 
-function setupAutoUpdater() {
-  if (isDev) return;
+app.whenReady().then(() => {
+  void initializeApp();
+});
 
-  autoUpdater.logger = log;
-  autoUpdater.checkForUpdatesAndNotify();
-
-  autoUpdater.on('update-available', () => {
-    log.info('Update available');
-  });
-
-  autoUpdater.on('update-downloaded', () => {
-    log.info('Update downloaded');
-    dialog.showMessageBox(mainWindow!, {
-      type: 'info',
-      title: 'Update Ready',
-      message: 'A new version has been downloaded. Restart to apply?',
-      buttons: ['Restart Now', 'Later'],
-    }).then(({ response }) => {
-      if (response === 0) autoUpdater.quitAndInstall();
-    });
-  });
-
-  autoUpdater.on('error', (err) => {
-    log.error('Auto-updater error:', err);
-  });
-}
+app.on('activate', async () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    await createWindow();
+  }
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
@@ -196,19 +175,23 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async () => {
   log.info('Shutting down...');
-  for (const [name, service] of Object.entries(services)) {
-    if (service && typeof (service as any).shutdown === 'function') {
-      try {
-        await (service as any).shutdown();
-      } catch (e) {
-        log.error(`Error shutting down ${name}:`, e);
-      }
+  if (services) {
+    try {
+      await shutdownServices(services);
+    } catch (e) {
+      log.error('Service shutdown error:', e);
     }
   }
-  await pluginManager.shutdown();
-  await database.close();
+  try {
+    await pluginManager?.shutdown();
+  } catch (e) {
+    log.error('Plugin shutdown error:', e);
+  }
+  try {
+    await database?.close();
+  } catch (e) {
+    log.error('Database close error:', e);
+  }
 });
 
-initializeApp();
-
-export { mainWindow, services, store, database, pluginManager, themeManager };
+export { mainWindow, services, store, database, pluginManager, themeManager, autoUpdater };

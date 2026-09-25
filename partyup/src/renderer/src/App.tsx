@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Layout/Sidebar';
 import { Header } from './components/Layout/Header';
 import { MainContent } from './components/Layout/MainContent';
-import { GameGrid } from './features/library/GameGrid';
 import { GameDetail } from './features/library/GameDetail';
 import { LibraryView } from './features/library/LibraryView';
 import { DownloadsView } from './features/downloads/DownloadsView';
@@ -22,6 +21,7 @@ import { HoardSyncView } from './features/hoardSync/HoardSyncView';
 import { useAppStore } from './stores/appStore';
 import { useThemeStore } from './stores/themeStore';
 import { SidebarNavItem } from './types/navigation';
+import { UpdateBanner } from './components/UpdatePanel';
 
 const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'library', label: 'Library', icon: 'gamepad-2', path: '/library' },
@@ -63,11 +63,9 @@ export function App() {
   return (
     <div className="app" data-theme={currentTheme}>
       <Header onToggleSidebar={toggleSidebar} />
+      <UpdateBanner />
       <div className="app-body">
-        <Sidebar
-          collapsed={sidebarCollapsed}
-          items={NAV_ITEMS}
-        />
+        <Sidebar collapsed={sidebarCollapsed} items={NAV_ITEMS} />
         <MainContent>
           <Routes>
             <Route path="/library" element={<LibraryView />} />
@@ -80,7 +78,7 @@ export function App() {
             <Route path="/cloud" element={<CloudGamingView />} />
             <Route path="/optimization" element={<OptimizationView />} />
             <Route path="/achievements" element={<AchievementsView />} />
-<Route path="/saves" element={<SavesView />} />
+            <Route path="/saves" element={<SavesView />} />
             <Route path="/hoard-sync" element={<HoardSyncView />} />
             <Route path="/social" element={<SocialView />} />
             <Route path="/plugins" element={<PluginsView />} />

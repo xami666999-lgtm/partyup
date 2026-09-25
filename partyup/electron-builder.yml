@@ -31,7 +31,7 @@ portable:
   artifactName: PartyUp-${version}-portable.${ext}
 publish:
   - provider: github
-    owner: PartyUp
+    owner: xami666999-lgtm
     repo: partyup
 extraResources:
   - from: src/resources

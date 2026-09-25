@@ -1,16 +1,17 @@
 import React from 'react';
-import { Search, Menu, Maximize2, Minimize, X, Sun, Moon, ChevronDown, User } from 'lucide-react';
+import { Search, Menu, Maximize2, Minimize, X, Sun, Moon, User } from 'lucide-react';
+import { api } from '../../utils/api';
 import { useAppStore } from '../../stores/appStore';
 import { useThemeStore } from '../../stores/themeStore';
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
-  const { setWindowState, windowState } = useAppStore();
+  const { windowState } = useAppStore();
   const { currentTheme, applyTheme } = useThemeStore();
 
   const handleWindowControl = (action: 'minimize' | 'maximize' | 'close') => {
-    if (window.electron?.api?.system) {
-      window.electron.api.system[action]();
-    }
+    if (action === 'minimize') void api.system.minimize();
+    if (action === 'maximize') void api.system.maximize();
+    if (action === 'close') void api.system.close();
   };
 
   return (
@@ -20,7 +21,7 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           <Menu size={20} />
         </button>
         <div className="app-title">
-          <span className="title-main">Hydra</span><span className="title-plus">++</span>
+          <span className="title-main">PartyUp</span>
         </div>
       </div>
 

@@ -1,10 +1,10 @@
 export class ThemeManager {
   private themes: Map<string, any> = new Map();
   private activeTheme: string = 'partyup-dark';
-  private mainWindow: any;
+  private mainWindow: any = null;
 
-  constructor(mainWindow: any) {
-    this.mainWindow = mainWindow;
+  constructor(mainWindow?: any) {
+    this.mainWindow = mainWindow || null;
   }
 
   async initialize() {

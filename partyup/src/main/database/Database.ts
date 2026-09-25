@@ -1,21 +1,27 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import { join } from 'path';
-import { readFile, writeFile, mkdir } from 'fs/promises';
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises';
 import { app } from 'electron';
+import * as path from 'path';
 
 export class Database {
   private db: SqlJsDatabase | null = null;
   private dbPath: string;
+  private wasmPath: string;
 
   constructor() {
     this.dbPath = join(app.getPath('userData'), 'partyup.db');
+    this.wasmPath = join(app.getPath('userData'), 'sql-wasm.wasm');
   }
 
   async initialize() {
     await mkdir(join(this.dbPath, '..'), { recursive: true });
     
+    // Copy WASM file locally if not exists
+    await this.ensureWasmFile();
+    
     const SQL = await initSqlJs({
-      locateFile: (file) => `https://sql.js.org/dist/${file}`
+      locateFile: (file) => `file://${this.wasmPath}`
     });
 
     // Try to load existing database
@@ -32,6 +38,23 @@ export class Database {
       this.db = new SQL.Database();
       await this.runMigrations();
       await this.save();
+    }
+  }
+
+  private async ensureWasmFile() {
+    try {
+      await readFile(this.wasmPath);
+    } catch {
+      // Copy from sql.js package
+      const srcWasm = path.join(process.resourcesPath || process.cwd(), 'node_modules', 'sql.js', 'dist', 'sql-wasm.wasm');
+      try {
+        await copyFile(srcWasm, this.wasmPath);
+      } catch {
+        // Fallback: download if not found locally
+        const response = await fetch('https://sql.js.org/dist/sql-wasm.wasm');
+        const buffer = await response.arrayBuffer();
+        await writeFile(this.wasmPath, Buffer.from(buffer));
+      }
     }
   }
 
@@ -267,6 +290,81 @@ export class Database {
         size INTEGER NOT NULL,
         ref_count INTEGER DEFAULT 1,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS user_profiles (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL UNIQUE,
+        display_name TEXT,
+        avatar TEXT,
+        bio TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        theme_id TEXT,
+        big_picture_enabled INTEGER DEFAULT 0,
+        controller_config TEXT,
+        privacy_settings TEXT
+      )`,
+      `CREATE TABLE IF NOT EXISTS playtime_sessions (
+        id TEXT PRIMARY KEY,
+        game_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT,
+        duration INTEGER DEFAULT 0,
+        platform TEXT,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS achievements (
+        id TEXT PRIMARY KEY,
+        game_id TEXT NOT NULL,
+        achievement_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        icon TEXT,
+        rarity REAL,
+        unlocked INTEGER DEFAULT 0,
+        unlocked_at TEXT,
+        platform TEXT,
+        FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+      )`,
+      `CREATE TABLE IF NOT EXISTS friends (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        friend_id TEXT NOT NULL,
+        friend_name TEXT NOT NULL,
+        friend_avatar TEXT,
+        status TEXT DEFAULT 'offline',
+        last_seen TEXT,
+        game_id TEXT,
+        game_name TEXT,
+        added_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(user_id, friend_id)
+      )`,
+      `CREATE TABLE IF NOT EXISTS theme_marketplace (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        author TEXT,
+        version TEXT,
+        description TEXT,
+        preview_image TEXT,
+        download_url TEXT,
+        source TEXT,
+        category TEXT,
+        rating REAL DEFAULT 0,
+        downloads INTEGER DEFAULT 0,
+        tags TEXT,
+        data TEXT NOT NULL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`,
+      `CREATE TABLE IF NOT EXISTS big_picture_settings (
+        id TEXT PRIMARY KEY DEFAULT 'default',
+        enabled INTEGER DEFAULT 0,
+        controller_config TEXT,
+        theme_id TEXT,
+        auto_launch INTEGER DEFAULT 0,
+        fullscreen INTEGER DEFAULT 1,
+        last_used TEXT
       )`,
     ];
 

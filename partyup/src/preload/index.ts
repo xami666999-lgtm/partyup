@@ -319,6 +319,63 @@ api: {
         getSnapshots: (gameId: string) => Promise<any>;
         getStats: () => Promise<any>;
       };
+      profile: {
+        getProfile: () => Promise<any>;
+        updateProfile: (updates: any) => Promise<any>;
+        setTheme: (themeId: string) => Promise<any>;
+        setBigPictureMode: (enabled: boolean) => Promise<any>;
+        updateControllerConfig: (config: string) => Promise<any>;
+        updatePrivacySettings: (settings: object) => Promise<any>;
+        exportProfile: () => Promise<string>;
+        importProfile: (json: string) => Promise<any>;
+      };
+      playtime: {
+        startSession: (gameId: string, platform?: string) => Promise<any>;
+        endSession: (gameId: string) => Promise<any>;
+        getGameStats: (gameId: string) => Promise<any>;
+        getTotalPlaytime: () => Promise<number>;
+        getRecentSessions: (limit?: number) => Promise<any>;
+        getCurrentlyPlaying: () => Promise<any>;
+      };
+      friends: {
+        addFriend: (friendId: string, friendName: string, friendAvatar?: string) => Promise<any>;
+        removeFriend: (friendId: string) => Promise<void>;
+        getFriends: () => Promise<any>;
+        getOnlineFriends: () => Promise<any>;
+        updateFriendStatus: (friendId: string, status: string, gameId?: string, gameName?: string) => Promise<void>;
+        getFriend: (friendId: string) => Promise<any>;
+        searchUsers: (query: string) => Promise<any>;
+        getFriendCount: () => Promise<number>;
+        getOnlineCount: () => Promise<number>;
+      };
+      bigPicture: {
+        getSettings: () => Promise<any>;
+        updateSettings: (updates: any) => Promise<any>;
+        enableBigPictureMode: () => Promise<void>;
+        disableBigPictureMode: () => Promise<void>;
+        toggleBigPictureMode: () => Promise<boolean>;
+        setTheme: (themeId: string) => Promise<void>;
+        setAutoLaunch: (enabled: boolean) => Promise<void>;
+        setFullscreen: (enabled: boolean) => Promise<void>;
+        updateControllerConfig: (config: Record<string, any>) => Promise<void>;
+        getControllerConfig: () => Promise<Record<string, any>>;
+        isBigPictureActive: () => boolean;
+      };
+      themeMarketplace: {
+        getThemes: (filters?: { source?: string; category?: string; search?: string }) => Promise<any>;
+        getTheme: (id: string) => Promise<any>;
+        installTheme: (theme: any) => Promise<void>;
+        uninstallTheme: (id: string) => Promise<void>;
+        getInstalledThemes: () => Promise<any>;
+        getCustomThemes: () => Promise<any>;
+        createCustomTheme: (data: any, name: string, author: string) => Promise<any>;
+        updateTheme: (id: string, updates: any) => Promise<void>;
+        incrementDownloadCount: (id: string) => Promise<void>;
+        rateTheme: (id: string, rating: number) => Promise<void>;
+        importFromPlaynite: (path: string) => Promise<any>;
+        fetchHydraThemes: () => Promise<any>;
+        fetchPlayniteThemes: () => Promise<any>;
+      };
     };
   }
 }

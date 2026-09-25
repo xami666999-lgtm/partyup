@@ -7,25 +7,10 @@ import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
 import { isDev } from './utils/env.js';
 import { setupIpcHandlers } from './ipc/index.js';
-import { initializeServices } from './services/index.js';
+import { initializeServices, Services, shutdownServices } from './services/index.js';
 import { PluginManager } from './plugins/PluginManager.js';
 import { ThemeManager } from './theme/ThemeManager.js';
 import { Database } from './database/Database.js';
-import { SteamService } from './services/SteamService.js';
-import { TorrentService } from './services/TorrentService.js';
-import { EmulatorService } from './services/EmulatorService.js';
-import { ModManagerService } from './services/ModManagerService.js';
-import { MultiplayerService } from './services/MultiplayerService.js';
-import { CloudGamingService } from './services/CloudGamingService.js';
-import { OptimizationService } from './services/OptimizationService.js';
-import { AchievementService } from './services/AchievementService.js';
-import { SaveManagerService } from './services/SaveManagerService.js';
-import { LibraryService } from './services/LibraryService.js';
-import { SocialService } from './services/SocialService.js';
-import { DiscordService } from './services/DiscordService.js';
-import { MetadataService } from './services/MetadataService.js';
-import { DownloadService } from './services/DownloadService.js';
-import { HoardSyncService } from './services/HoardSyncService.js';
 
 declare const __dirname: string;
 
@@ -55,24 +40,7 @@ let mainWindow: BrowserWindow | null = null;
 let pluginManager: PluginManager;
 let themeManager: ThemeManager;
 let database: Database;
-
-const services = {
-  steam: null as SteamService | null,
-  torrent: null as TorrentService | null,
-  emulator: null as EmulatorService | null,
-  modManager: null as ModManagerService | null,
-  multiplayer: null as MultiplayerService | null,
-  cloudGaming: null as CloudGamingService | null,
-  optimization: null as OptimizationService | null,
-  achievement: null as AchievementService | null,
-  saveManager: null as SaveManagerService | null,
-  hoardSync: null as HoardSyncService | null,
-  library: null as LibraryService | null,
-  social: null as SocialService | null,
-  discord: null as DiscordService | null,
-  metadata: null as MetadataService | null,
-  download: null as DownloadService | null,
-};
+let services: any = null;
 
 async function createWindow() {
   const mainWindowState = windowStateKeeper({
@@ -138,30 +106,21 @@ async function initializeApp() {
     database = new Database();
     await database.initialize();
 
-    themeManager = new ThemeManager(mainWindow!);
-    await themeManager.initialize();
-
     pluginManager = new PluginManager();
     await pluginManager.loadPlugins();
 
-    services.steam = new SteamService();
-    services.torrent = new TorrentService();
-    services.emulator = new EmulatorService();
-    services.modManager = new ModManagerService();
-    services.multiplayer = new MultiplayerService();
-    services.cloudGaming = new CloudGamingService();
-    services.optimization = new OptimizationService();
-services.hoardSync = new HoardSyncService(database);
-    services.hoardSync = new HoardSyncService(database);
-    services.achievement = new AchievementService();
-    services.saveManager = new SaveManagerService();
-    services.library = new LibraryService();
-    services.social = new SocialService();
-    services.discord = new DiscordService();
-    services.metadata = new MetadataService();
-    services.download = new DownloadService();
+    themeManager = new ThemeManager();
+    await themeManager.initialize();
 
-    await initializeServices(services, store, database, pluginManager);
+    services = await initializeServices(store, database, pluginManager);
+
+    // Create window after services initialized
+    await createWindow();
+
+    // Now set the mainWindow reference in ThemeManager
+    if (mainWindow) {
+      (themeManager as any).mainWindow = mainWindow;
+    }
 
     setupIpcHandlers(mainWindow!, services, store, database, pluginManager, themeManager);
 
@@ -185,6 +144,12 @@ services.hoardSync = new HoardSyncService(database);
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {
         await createWindow();
+      }
+    });
+
+    app.on('before-quit', async () => {
+      if (services) {
+        await shutdownServices(services);
       }
     });
 
@@ -232,9 +197,9 @@ app.on('window-all-closed', () => {
 app.on('before-quit', async () => {
   log.info('Shutting down...');
   for (const [name, service] of Object.entries(services)) {
-    if (service && typeof service.shutdown === 'function') {
+    if (service && typeof (service as any).shutdown === 'function') {
       try {
-        await service.shutdown();
+        await (service as any).shutdown();
       } catch (e) {
         log.error(`Error shutting down ${name}:`, e);
       }

@@ -143,7 +143,7 @@ export const api = {
     get: () => invoke('downloads:get'),
     setAria2: (options: any) => invoke('downloads:set-aria2', options),
   },
-settings: {
+  settings: {
     get: (key: string) => invoke('settings:get', key),
     set: (key: string, value: any) => invoke('settings:set', key, value),
     getAll: () => invoke('settings:get-all'),
@@ -168,6 +168,13 @@ settings: {
     disable: (id: string) => invoke('plugins:disable', id),
     install: (url: string) => invoke('plugins:install', url),
     getMarketplace: () => invoke('plugins:marketplace'),
+  },
+  update: {
+    getState: () => invoke('update:get-state'),
+    check: () => invoke('update:check'),
+    download: () => invoke('update:download'),
+    install: () => invoke('update:install'),
+    openReleases: () => invoke('update:open-releases'),
   },
   system: {
     openExternal: (url: string) => invoke('system:open-external', url),

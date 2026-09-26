@@ -1,1 +1,3 @@
-export const isDev = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+import { app } from 'electron';
+
+export const isDev = !app.isPackaged && (process.env.NODE_ENV === 'development' || !process.env.NODE_ENV);

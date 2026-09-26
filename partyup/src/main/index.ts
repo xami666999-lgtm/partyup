@@ -114,7 +114,13 @@ async function initializeApp() {
 
     services = await initializeServices(store, database, pluginManager);
 
-    // Create window after services initialized
+    if (!app.requestSingleInstanceLock()) {
+      app.quit();
+      return;
+    }
+
+    await app.whenReady();
+
     await createWindow();
 
     // Now set the mainWindow reference in ThemeManager
@@ -132,14 +138,6 @@ async function initializeApp() {
         mainWindow.focus();
       }
     });
-
-    if (!app.requestSingleInstanceLock()) {
-      app.quit();
-      return;
-    }
-
-    await app.whenReady();
-    await createWindow();
 
     app.on('activate', async () => {
       if (BrowserWindow.getAllWindows().length === 0) {

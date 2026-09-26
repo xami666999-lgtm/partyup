@@ -20,6 +20,11 @@ export interface Services {
   metadata: any;
   download: any;
   hoardSync: any;
+  profile: any;
+  playtime: any;
+  friends: any;
+  bigPicture: any;
+  themeMarketplace: any;
 }
 
 export function setupIpcHandlers(
@@ -316,12 +321,69 @@ export function setupIpcHandlers(
     return true;
   });
 
-  // Theme handlers
+// Theme handlers
   handle('themes:get', async () => themeManager.getThemes());
   handle('themes:set', async (themeId: string) => themeManager.setTheme(themeId));
   handle('themes:install', async (themeData: object) => themeManager.installTheme(themeData));
   handle('themes:create', async (theme: object) => themeManager.createTheme(theme));
   handle('themes:marketplace', async () => themeManager.getMarketplace());
+
+  // Profile handlers
+  handle('profile:get', async () => services.profile?.getProfile());
+  handle('profile:update', async (updates: object) => services.profile?.updateProfile(updates));
+  handle('profile:set-theme', async (themeId: string) => services.profile?.setTheme(themeId));
+  handle('profile:set-big-picture', async (enabled: boolean) => services.profile?.setBigPictureMode(enabled));
+  handle('profile:controller-config', async (config: string) => services.profile?.updateControllerConfig(config));
+  handle('profile:privacy', async (settings: object) => services.profile?.updatePrivacySettings(settings));
+  handle('profile:export', async () => services.profile?.exportProfile());
+  handle('profile:import', async (json: string) => services.profile?.importProfile(json));
+
+  // Playtime handlers
+  handle('playtime:start', async (gameId: string, platform?: string) => services.playtime?.startSession(gameId, platform));
+  handle('playtime:end', async (gameId: string) => services.playtime?.endSession(gameId));
+  handle('playtime:stats', async (gameId: string) => services.playtime?.getGameStats(gameId));
+  handle('playtime:total', async () => services.playtime?.getTotalPlaytime());
+  handle('playtime:recent', async (limit?: number) => services.playtime?.getRecentSessions(limit));
+  handle('playtime:current', async () => services.playtime?.getCurrentlyPlaying());
+
+  // Friends handlers
+  handle('friends:add', async (friendId: string, friendName: string, friendAvatar?: string) => services.friends?.addFriend(friendId, friendName, friendAvatar));
+  handle('friends:remove', async (friendId: string) => services.friends?.removeFriend(friendId));
+  handle('friends:get', async () => services.friends?.getFriends());
+  handle('friends:online', async () => services.friends?.getOnlineFriends());
+  handle('friends:update-status', async (friendId: string, status: string, gameId?: string, gameName?: string) => services.friends?.updateFriendStatus(friendId, status, gameId, gameName));
+  handle('friends:get-one', async (friendId: string) => services.friends?.getFriend(friendId));
+  handle('friends:search', async (query: string) => services.friends?.searchUsers(query));
+  handle('friends:count', async () => services.friends?.getFriendCount());
+  handle('friends:online-count', async () => services.friends?.getOnlineCount());
+
+  // Big Picture handlers
+  handle('big-picture:get', async () => services.bigPicture?.getSettings());
+  handle('big-picture:update', async (updates: object) => services.bigPicture?.updateSettings(updates));
+  handle('big-picture:enable', async () => services.bigPicture?.enableBigPictureMode());
+  handle('big-picture:disable', async () => services.bigPicture?.disableBigPictureMode());
+  handle('big-picture:toggle', async () => services.bigPicture?.toggleBigPictureMode());
+  handle('big-picture:set-theme', async (themeId: string) => services.bigPicture?.setTheme(themeId));
+  handle('big-picture:auto-launch', async (enabled: boolean) => services.bigPicture?.setAutoLaunch(enabled));
+  handle('big-picture:fullscreen', async (enabled: boolean) => services.bigPicture?.setFullscreen(enabled));
+  handle('big-picture:controller', async (config: object) => services.bigPicture?.updateControllerConfig(config));
+  handle('big-picture:get-controller', async () => services.bigPicture?.getControllerConfig());
+  handle('big-picture:is-active', async () => services.bigPicture?.isBigPictureActive());
+
+  // Theme Marketplace handlers
+  handle('theme-marketplace:get', async (filters?: object) => services.themeMarketplace?.getThemes(filters));
+  handle('theme-marketplace:get-one', async (id: string) => services.themeMarketplace?.getTheme(id));
+  handle('theme-marketplace:install', async (theme: object) => services.themeMarketplace?.installTheme(theme));
+  handle('theme-marketplace:uninstall', async (id: string) => services.themeMarketplace?.uninstallTheme(id));
+  handle('theme-marketplace:installed', async () => services.themeMarketplace?.getInstalledThemes());
+  handle('theme-marketplace:custom', async () => services.themeMarketplace?.getCustomThemes());
+  handle('theme-marketplace:create', async (data: object, name: string, author: string) => services.themeMarketplace?.createCustomTheme(data, name, author));
+  handle('theme-marketplace:update', async (id: string, updates: object) => services.themeMarketplace?.updateTheme(id, updates));
+  handle('theme-marketplace:download', async (id: string) => services.themeMarketplace?.incrementDownloadCount(id));
+  handle('theme-marketplace:rate', async (id: string, rating: number) => services.themeMarketplace?.rateTheme(id, rating));
+  handle('theme-marketplace:import-playnite', async (path: string) => services.themeMarketplace?.importFromPlaynite(path));
+  handle('theme-marketplace:fetch-hydra', async () => services.themeMarketplace?.fetchHydraThemes());
+  handle('theme-marketplace:fetch-playnite', async () => services.themeMarketplace?.fetchPlayniteThemes());
 
   // Plugin handlers
   handle('plugins:get', async () => pluginManager.getPlugins());

@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  sportarr:
+    image: sportarr/sportarr:latest
+    container_name: sportarr
+    environment:
+      - PUID=99
+      - PGID=100
+      - UMASK=022
+      - TZ=America/New_York
+    volumes:
+      - C:\sportarr\config:/config
+      - C:\sportarr\data:/data
+    ports:
+      - 1867:1867
+    restart: unless-stopped

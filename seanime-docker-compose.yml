@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  seanime:
+    image: umagistr/seanime:latest
+    container_name: seanime
+    volumes:
+      - C:\seanime\config:/root/.config/Seanime
+      - C:\seanime\anime:/anime
+      - C:\seanime\downloads:/downloads
+    ports:
+      - 3211:43211
+    restart: unless-stopped

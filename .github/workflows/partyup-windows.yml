@@ -34,7 +34,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Installer closes a running PartyUp instead of stopping on that dialog."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Setup force-closes PartyUp before it copies files, including when Windows asks for admin."
           fi
           gh release upload "v$VERSION" dist/*.exe --clobber
         env:

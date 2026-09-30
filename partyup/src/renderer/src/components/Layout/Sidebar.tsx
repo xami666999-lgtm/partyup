@@ -17,6 +17,8 @@ const iconMap: Record<string, React.ComponentType<{ size?: number }>> = {
   'plug': Icons.Plug,
   'palette': Icons.Palette,
   'settings': Icons.Settings,
+  'steam': Icons.Monitor,
+  'user': Icons.User,
 };
 
 interface SidebarProps {

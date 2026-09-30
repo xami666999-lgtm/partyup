@@ -6,13 +6,25 @@ export function OptimizationView() {
   const profiles = useVault((s) => s.profiles);
   const addProfile = useVault((s) => s.addProfile);
   const patchProfile = useVault((s) => s.patchProfile);
+  const tools = useVault((s) => s.tools);
+  const toggleTool = useVault((s) => s.toggleTool);
   const [game, setGame] = useState('');
 
   return (
     <div className="pu-page">
       <div>
         <h1>Optimization</h1>
-        <p className="sub">Per-game notes for fullscreen, vsync, and a frame cap. Applied by you in the game.</p>
+        <p className="sub">Per-game notes, plus the tools you already installed.</p>
+      </div>
+      <div className="pu-list">
+        {tools.map((tool) => (
+          <article key={tool.id}>
+            <strong>{tool.name}</strong>
+            <button className="btn btn-secondary btn-sm" type="button" onClick={() => toggleTool(tool.id)}>
+              {tool.on ? 'On this PC' : 'Not installed'}
+            </button>
+          </article>
+        ))}
       </div>
       <form
         className="pu-row"

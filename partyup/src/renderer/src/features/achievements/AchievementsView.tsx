@@ -17,7 +17,7 @@ export function AchievementsView() {
           <article key={item.id}>
             <div>
               <strong>{item.name}</strong>
-              <p>{item.game}</p>
+              <p>{item.game} · {item.platform || 'Local'}</p>
             </div>
             <button className="btn btn-secondary btn-sm" type="button" onClick={() => toggle(item.id)}>
               {item.unlocked ? 'Unlocked' : 'Locked'}

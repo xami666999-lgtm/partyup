@@ -1,11 +1,14 @@
 import React from 'react';
-import { Search, Menu, Maximize2, Minimize, X, Sun, Moon, ChevronDown, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Search, Menu, Maximize2, Minimize, X, Tv, User } from 'lucide-react';
 import { useAppStore } from '../../stores/appStore';
-import { useThemeStore } from '../../stores/themeStore';
+import { useVault } from '../../features/local/vault';
 
 export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
   const { setWindowState, windowState } = useAppStore();
-  const { currentTheme, applyTheme } = useThemeStore();
+  const people = useVault((s) => s.people);
+  const active = useVault((s) => s.activePerson);
+  const person = people.find((item) => item.id === active)?.name ?? 'You';
 
   const handleWindowControl = (action: 'minimize' | 'maximize' | 'close') => {
     if (window.electron?.api?.system) {
@@ -20,7 +23,7 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
           <Menu size={20} />
         </button>
         <div className="app-title">
-          <span className="title-main">Hydra</span><span className="title-plus">++</span>
+          <span className="title-main">PartyUp</span>
         </div>
       </div>
 
@@ -37,15 +40,12 @@ export function Header({ onToggleSidebar }: { onToggleSidebar: () => void }) {
       </div>
 
       <div className="header-right">
-        <button className="icon-btn" onClick={() => applyTheme(currentTheme === 'hydra-dark' ? 'hydra-light' : 'hydra-dark')} aria-label="Toggle theme">
-          {currentTheme === 'hydra-dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-
-        <div className="user-menu">
-          <button className="icon-btn user-avatar" aria-label="User menu">
-            <User size={20} />
-          </button>
-        </div>
+        <Link className="icon-btn" to="/big-picture" aria-label="Big Picture">
+          <Tv size={20} />
+        </Link>
+        <Link className="icon-btn user-avatar" to="/profiles" aria-label={person}>
+          <User size={20} />
+        </Link>
 
         <div className="window-controls">
           <button className="icon-btn win-btn" onClick={() => handleWindowControl('minimize')} aria-label="Minimize">

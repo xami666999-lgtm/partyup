@@ -14,7 +14,10 @@ export type LibGame = {
 export type ModItem = { id: string; game: string; name: string; enabled: boolean };
 export type Session = { id: string; game: string; host: string; slots: number; open: boolean };
 export type OptProfile = { id: string; game: string; fullscreen: boolean; vsync: boolean; fps: number };
-export type Achievement = { id: string; game: string; name: string; unlocked: boolean };
+export type Achievement = { id: string; game: string; name: string; unlocked: boolean; platform: string };
+export type Person = { id: string; name: string; color: string };
+export type EmulatorPath = { id: string; name: string; path: string; ready: boolean };
+export type ToolCheck = { id: string; name: string; on: boolean };
 export type SaveSlot = { id: string; game: string; slot: string; note: string; at: string };
 export type Friend = { id: string; name: string; status: 'online' | 'away' | 'offline'; playing: string };
 export type PluginItem = { id: string; name: string; detail: string; enabled: boolean };
@@ -30,10 +33,16 @@ type Vault = {
   friends: Friend[];
   plugins: PluginItem[];
   files: LocalFile[];
+  people: Person[];
+  activePerson: string;
+  emulators: EmulatorPath[];
+  tools: ToolCheck[];
+  playing: { gameId: string | null; startedAt: number | null };
   settings: {
     confirmLaunch: boolean;
     showHours: boolean;
     emulatorFolder: string;
+    steamFolder: string;
     discord: boolean;
   };
   addGame: (name: string, platform: string) => void;
@@ -55,6 +64,14 @@ type Vault = {
   addFile: (name: string, path: string) => void;
   removeFile: (id: string) => void;
   patchSettings: (patch: Partial<Vault['settings']>) => void;
+  addPerson: (name: string) => void;
+  setActivePerson: (id: string) => void;
+  startPlay: (gameId: string) => void;
+  stopPlay: () => void;
+  setEmulatorPath: (id: string, path: string) => void;
+  toggleEmulator: (id: string) => void;
+  toggleTool: (id: string) => void;
+  snapshotLibrary: () => void;
 };
 
 const id = () => Math.random().toString(36).slice(2, 9);
@@ -63,7 +80,7 @@ export const useVault = create<Vault>()(
   persist(
     (set) => ({
       games: [
-        { id: 'g1', name: 'Hades', platform: 'PC', hours: 42, favorite: true, path: '', notes: 'Runs from your own install.' },
+        { id: 'g1', name: 'Hades', platform: 'Steam', hours: 42, favorite: true, path: '', notes: 'Runs from your own install.' },
         { id: 'g2', name: 'Celeste', platform: 'PC', hours: 18, favorite: false, path: '', notes: '' },
         { id: 'g3', name: 'Stardew Valley', platform: 'PC', hours: 63, favorite: true, path: '', notes: '' },
       ],
@@ -77,10 +94,10 @@ export const useVault = create<Vault>()(
         { id: 'p2', game: 'Celeste', fullscreen: true, vsync: true, fps: 60 },
       ],
       achievements: [
-        { id: 'a1', game: 'Hades', name: 'Escaped', unlocked: true },
-        { id: 'a2', game: 'Hades', name: 'Fully bonded', unlocked: false },
-        { id: 'a3', game: 'Celeste', name: 'Summit', unlocked: true },
-        { id: 'a4', game: 'Stardew Valley', name: 'Community center', unlocked: false },
+        { id: 'a1', game: 'Hades', name: 'Escaped', unlocked: true, platform: 'Steam' },
+        { id: 'a2', game: 'Hades', name: 'Fully bonded', unlocked: false, platform: 'Steam' },
+        { id: 'a3', game: 'Celeste', name: 'Summit', unlocked: true, platform: 'PC' },
+        { id: 'a4', game: 'Stardew Valley', name: 'Community center', unlocked: false, platform: 'GOG' },
       ],
       saves: [
         { id: 'sv1', game: 'Hades', slot: 'Slot 1', note: 'Heat 8', at: 'Today' },
@@ -96,7 +113,23 @@ export const useVault = create<Vault>()(
         { id: 'pl3', name: 'Discord status', detail: 'Show the current game while PartyUp is open.', enabled: false },
       ],
       files: [],
-      settings: { confirmLaunch: true, showHours: true, emulatorFolder: '', discord: false },
+      people: [{ id: 'me', name: 'You', color: '#6366f1' }],
+      activePerson: 'me',
+      emulators: [
+        { id: 'dolphin', name: 'Dolphin', path: '', ready: false },
+        { id: 'pcsx2', name: 'PCSX2', path: '', ready: false },
+        { id: 'duck', name: 'DuckStation', path: '', ready: false },
+        { id: 'retro', name: 'RetroArch', path: '', ready: false },
+        { id: 'ppsspp', name: 'PPSSPP', path: '', ready: false },
+      ],
+      tools: [
+        { id: 'reshade', name: 'ReShade', on: false },
+        { id: 'specialk', name: 'Special K', on: false },
+        { id: 'lossless', name: 'Lossless Scaling', on: false },
+        { id: 'rtss', name: 'RTSS', on: false },
+      ],
+      playing: { gameId: null, startedAt: null },
+      settings: { confirmLaunch: true, showHours: true, emulatorFolder: '', steamFolder: '', discord: false },
       addGame: (name, platform) =>
         set((s) => ({ games: [{ id: id(), name, platform, hours: 0, favorite: false, path: '', notes: '' }, ...s.games] })),
       toggleFavorite: (gameId) =>
@@ -133,7 +166,50 @@ export const useVault = create<Vault>()(
       addFile: (name, path) => set((s) => ({ files: [{ id: id(), name, path }, ...s.files] })),
       removeFile: (fileId) => set((s) => ({ files: s.files.filter((file) => file.id !== fileId) })),
       patchSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
+      addPerson: (name) =>
+        set((s) => ({ people: [...s.people, { id: id(), name, color: '#34d399' }] })),
+      setActivePerson: (personId) => set({ activePerson: personId }),
+      startPlay: (gameId) => set({ playing: { gameId, startedAt: Date.now() } }),
+      stopPlay: () =>
+        set((s) => {
+          if (!s.playing.gameId || !s.playing.startedAt) return { playing: { gameId: null, startedAt: null } };
+          const added = (Date.now() - s.playing.startedAt) / 3600000;
+          return {
+            playing: { gameId: null, startedAt: null },
+            games: s.games.map((game) =>
+              game.id === s.playing.gameId ? { ...game, hours: Math.round((game.hours + added) * 10) / 10 } : game,
+            ),
+          };
+        }),
+      setEmulatorPath: (emulatorId, path) =>
+        set((s) => ({ emulators: s.emulators.map((item) => (item.id === emulatorId ? { ...item, path, ready: path.length > 0 } : item)) })),
+      toggleEmulator: (emulatorId) =>
+        set((s) => ({ emulators: s.emulators.map((item) => (item.id === emulatorId ? { ...item, ready: !item.ready } : item)) })),
+      toggleTool: (toolId) => set((s) => ({ tools: s.tools.map((tool) => (tool.id === toolId ? { ...tool, on: !tool.on } : tool)) })),
+      snapshotLibrary: () =>
+        set((s) => ({
+          saves: [
+            ...s.games.map((game) => ({
+              id: id(),
+              game: game.name,
+              slot: 'Hoard',
+              note: `${game.hours}h on ${s.people.find((person) => person.id === s.activePerson)?.name ?? 'You'}`,
+              at: 'Just now',
+            })),
+            ...s.saves,
+          ],
+        })),
     }),
-    { name: 'partyup-vault' },
+    {
+      name: 'partyup-vault',
+      merge: (persisted, current) => ({
+        ...current,
+        ...(persisted as Partial<Vault>),
+        settings: { ...current.settings, ...((persisted as Partial<Vault>)?.settings ?? {}) },
+        people: (persisted as Partial<Vault>)?.people?.length ? (persisted as Vault).people : current.people,
+        emulators: (persisted as Partial<Vault>)?.emulators?.length ? (persisted as Vault).emulators : current.emulators,
+        tools: (persisted as Partial<Vault>)?.tools?.length ? (persisted as Vault).tools : current.tools,
+      }),
+    },
   ),
 );

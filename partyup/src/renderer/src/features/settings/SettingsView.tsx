@@ -7,6 +7,8 @@ export function SettingsView() {
   const plugins = useVault((s) => s.plugins);
   const togglePlugin = useVault((s) => s.togglePlugin);
   const discord = plugins.find((plugin) => plugin.id === 'pl3');
+  const emulators = useVault((s) => s.emulators);
+  const setEmulatorPath = useVault((s) => s.setEmulatorPath);
 
   return (
     <div className="pu-page">
@@ -44,17 +46,32 @@ export function SettingsView() {
         </article>
         <article>
           <div style={{ flex: 1 }}>
-            <strong>Emulator folder</strong>
-            <p>Where you keep Dolphin, PCSX2, and the rest.</p>
+            <strong>Steam library folder</strong>
+            <p>Where Steam is installed on this PC.</p>
             <input
-              value={settings.emulatorFolder}
-              placeholder="C:\\Emulators"
-              aria-label="Emulator folder"
-              onChange={(event) => patch({ emulatorFolder: event.target.value })}
+              value={settings.steamFolder}
+              placeholder="C:\\Program Files (x86)\\Steam"
+              aria-label="Steam folder"
+              onChange={(event) => patch({ steamFolder: event.target.value })}
               style={{ marginTop: 8, width: '100%' }}
             />
           </div>
         </article>
+        {emulators.map((emulator) => (
+          <article key={emulator.id}>
+            <div style={{ flex: 1 }}>
+              <strong>{emulator.name}</strong>
+              <p>{emulator.ready ? 'Path set' : 'Not set'}</p>
+              <input
+                value={emulator.path}
+                placeholder="Path to the emulator"
+                aria-label={`${emulator.name} path`}
+                onChange={(event) => setEmulatorPath(emulator.id, event.target.value)}
+                style={{ marginTop: 8, width: '100%' }}
+              />
+            </div>
+          </article>
+        ))}
       </div>
     </div>
   );

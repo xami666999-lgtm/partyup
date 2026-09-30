@@ -9,6 +9,9 @@ export function LibraryView() {
   const toggleFavorite = useVault((s) => s.toggleFavorite);
   const setGamePath = useVault((s) => s.setGamePath);
   const removeGame = useVault((s) => s.removeGame);
+  const playing = useVault((s) => s.playing);
+  const startPlay = useVault((s) => s.startPlay);
+  const stopPlay = useVault((s) => s.stopPlay);
   const [name, setName] = useState('');
   const [platform, setPlatform] = useState('PC');
   const [query, setQuery] = useState('');
@@ -56,6 +59,13 @@ export function LibraryView() {
               onChange={(event) => setGamePath(game.id, event.target.value)}
             />
             <div className="pu-row">
+              <button
+                className="btn btn-primary btn-sm"
+                type="button"
+                onClick={() => (playing.gameId === game.id ? stopPlay() : startPlay(game.id))}
+              >
+                {playing.gameId === game.id ? 'Stop playtime' : 'Start playtime'}
+              </button>
               <button className="btn btn-secondary btn-sm" type="button" onClick={() => toggleFavorite(game.id)}>
                 {game.favorite ? 'Unfavorite' : 'Favorite'}
               </button>

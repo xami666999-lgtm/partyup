@@ -4,14 +4,17 @@ import '../local/pages.scss';
 
 export function HoardSyncView() {
   const saves = useVault((s) => s.saves);
-  const games = new Set(saves.map((save) => save.game)).size;
+  const games = useVault((s) => s.games);
+  const snapshotLibrary = useVault((s) => s.snapshotLibrary);
+  const hours = games.reduce((sum, game) => sum + game.hours, 0);
 
   return (
     <div className="pu-page">
       <div>
         <h1>Save sync</h1>
-        <p className="sub">{saves.length} snapshots across {games} games, stored on this PC only.</p>
+        <p className="sub">{saves.length} snapshots · {hours}h tracked across {games.length} games. Stored on this PC.</p>
       </div>
+      <button className="btn btn-primary" type="button" onClick={snapshotLibrary}>Snapshot library</button>
       <div className="pu-grid">
         <article className="pu-card">
           <h2>Local</h2>

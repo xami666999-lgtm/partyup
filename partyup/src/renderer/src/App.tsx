@@ -18,6 +18,9 @@ import { SocialView } from './features/social/SocialView';
 import { SettingsView } from './features/settings/SettingsView';
 import { PluginsView } from './features/plugins/PluginsView';
 import { ThemesView } from './features/themes/ThemesView';
+import { SteamView } from './features/steam/SteamView';
+import { ProfilesView } from './features/profiles/ProfilesView';
+import { BigPictureView } from './features/bigpicture/BigPictureView';
 import { HoardSyncView } from './features/hoardSync/HoardSyncView';
 import { useAppStore } from './stores/appStore';
 import { useThemeStore } from './stores/themeStore';
@@ -25,6 +28,7 @@ import { SidebarNavItem } from './types/navigation';
 
 const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'library', label: 'Library', icon: 'gamepad-2', path: '/library' },
+  { id: 'steam', label: 'Steam', icon: 'steam', path: '/steam' },
   { id: 'downloads', label: 'Downloads', icon: 'download', path: '/downloads' },
   { id: 'emulation', label: 'Consoles', icon: 'cpu', path: '/emulation' },
   { id: 'mods', label: 'Mods', icon: 'puzzle', path: '/mods' },
@@ -33,8 +37,9 @@ const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'optimization', label: 'Optimization', icon: 'sliders-horizontal', path: '/optimization' },
   { id: 'achievements', label: 'Achievements', icon: 'trophy', path: '/achievements' },
   { id: 'saves', label: 'Saves', icon: 'database', path: '/saves' },
-  { id: 'hoard-sync', label: 'Save Sync', icon: 'database', path: '/hoard-sync' },
-  { id: 'social', label: 'Social', icon: 'message-circle', path: '/social' },
+  { id: 'hoard-sync', label: 'Hoard Sync', icon: 'database', path: '/hoard-sync' },
+  { id: 'social', label: 'Friends', icon: 'message-circle', path: '/social' },
+  { id: 'profiles', label: 'Profiles', icon: 'user', path: '/profiles' },
   { id: 'plugins', label: 'Plugins', icon: 'plug', path: '/plugins' },
   { id: 'themes', label: 'Themes', icon: 'palette', path: '/themes' },
   { id: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
@@ -71,6 +76,9 @@ export function App() {
         <MainContent>
           <Routes>
             <Route path="/library" element={<LibraryView />} />
+            <Route path="/steam" element={<SteamView />} />
+            <Route path="/profiles" element={<ProfilesView />} />
+            <Route path="/big-picture" element={<BigPictureView />} />
             <Route path="/library/:view" element={<LibraryView />} />
             <Route path="/library/game/:id" element={<GameDetail />} />
             <Route path="/downloads" element={<DownloadsView />} />

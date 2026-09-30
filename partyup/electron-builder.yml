@@ -18,6 +18,7 @@ win:
       arch:
         - x64
   publisherName: PartyUp Team
+  icon: assets/icon.ico
   signAndEditExecutable: false
 nsis:
   oneClick: false
@@ -27,7 +28,6 @@ nsis:
   shortcutName: PartyUp
   uninstallDisplayName: PartyUp
   license: LICENSE.txt
-  include: build/installer.nsh
 portable:
   artifactName: "PartyUp-${version}-portable.${ext}"
 publish:

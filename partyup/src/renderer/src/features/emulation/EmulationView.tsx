@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './retro.scss';
 
@@ -177,20 +177,38 @@ function Cover({ item, tall = false }: { item: Game; tall?: boolean }) {
   );
 }
 
+type PlayBook = { ratings: Record<string, number>; plays: Record<string, number>; last: Record<string, string>; roms: Record<string, string>; emulator: string };
+
+const EMPTY_BOOK: PlayBook = { ratings: {}, plays: {}, last: {}, roms: {}, emulator: '' };
+
+function loadBook(): PlayBook {
+  try {
+    const raw = localStorage.getItem('partyup-retro');
+    return raw ? { ...EMPTY_BOOK, ...JSON.parse(raw) } : EMPTY_BOOK;
+  } catch {
+    return EMPTY_BOOK;
+  }
+}
+
 export function EmulationView() {
   const navigate = useNavigate();
   const [screen, setScreen] = useState<'console' | 'grid' | 'detail'>('console');
   const [makerIndex, setMakerIndex] = useState(0);
   const [systemIndex, setSystemIndex] = useState(0);
   const [gameIndex, setGameIndex] = useState(0);
-  const [ratings, setRatings] = useState<Record<string, number>>({});
+  const [book, setBook] = useState<PlayBook>(loadBook);
+  const [notice, setNotice] = useState('');
   const [now, setNow] = useState(() => new Date());
 
   const maker = MAKERS[makerIndex];
   const system = maker.systems[systemIndex];
   const games = system.games;
   const selected = games[Math.min(gameIndex, games.length - 1)];
-  const stars = ratings[selected.id] ?? selected.stars;
+  const stars = book.ratings[selected.id] ?? selected.stars;
+
+  useEffect(() => {
+    localStorage.setItem('partyup-retro', JSON.stringify(book));
+  }, [book]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 15000);
@@ -214,6 +232,11 @@ export function EmulationView() {
           setGameIndex(0);
           setScreen('grid');
         } else if (screen === 'grid') setScreen('detail');
+        else void launchSelected();
+        return;
+      }
+      if (key === 'f' || key === 'F') {
+        setBook((current) => ({ ...current, ratings: { ...current.ratings, [selected.id]: 5 } }));
         return;
       }
       if (screen === 'console') {
@@ -236,12 +259,38 @@ export function EmulationView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [screen, maker.systems.length, games.length, navigate]);
+  }, [screen, maker.systems.length, games.length, navigate, selected.id, book]);
 
-  const favorites = useMemo(
-    () => games.filter((item) => (ratings[item.id] ?? item.stars) >= 5).length,
-    [games, ratings],
-  );
+  const launchSelected = async () => {
+    const rom = book.roms[selected.id];
+    const exe = book.emulator;
+    if (!rom || !exe) {
+      setNotice('Add the emulator and a ROM you own, then press A.');
+      setScreen('detail');
+      return;
+    }
+    const api = (window as unknown as { api?: { emulator?: { launchRom?: (id: string, rom: string, args?: string[]) => Promise<{ success: boolean; error?: string }> } } }).api;
+    const result = await api?.emulator?.launchRom?.('retroarch', rom, [exe]);
+    if (!result?.success) {
+      setNotice(result?.error || 'Could not start the emulator.');
+      return;
+    }
+    const stamp = new Date().toLocaleString();
+    setBook((current) => ({
+      ...current,
+      plays: { ...current.plays, [selected.id]: (current.plays[selected.id] || 0) + 1 },
+      last: { ...current.last, [selected.id]: stamp },
+    }));
+    setNotice(`Started ${selected.name}`);
+  };
+
+  const playedIds = games.filter((item) => book.plays[item.id]);
+  const mostPlayed = playedIds.slice().sort((a, b) => (book.plays[b.id] || 0) - (book.plays[a.id] || 0))[0];
+  const lastPlayed = games
+    .map((item) => ({ item, at: book.last[item.id] }))
+    .filter((entry) => entry.at)
+    .sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+  const favorites = games.filter((item) => (book.ratings[item.id] ?? item.stars) >= 5).length;
 
   const clock = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -275,9 +324,9 @@ export function EmulationView() {
           <div className="rb-stats">
             <div>Games : {games.length}</div>
             <div>Favorites : {favorites || 'None'}</div>
-            <div>Games played : None</div>
-            <div>Most played : Unknown</div>
-            <div>Last played : Unknown</div>
+            <div>Games played : {playedIds.length || 'None'}</div>
+            <div>Most played : {mostPlayed?.name || 'Unknown'}</div>
+            <div>Last played : {lastPlayed?.item.name || 'Unknown'}</div>
           </div>
         </>
       ) : (
@@ -335,6 +384,26 @@ export function EmulationView() {
                   </div>
                   <p>{selected.blurb}</p>
                   <em>{selected.publisher}</em>
+                  <label>
+                    Emulator
+                    <input
+                      value={book.emulator}
+                      placeholder="D:\Emulators\retroarch.exe"
+                      aria-label="Emulator path"
+                      onChange={(event) => setBook((current) => ({ ...current, emulator: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    ROM
+                    <input
+                      value={book.roms[selected.id] || ''}
+                      placeholder="D:\ROMs\game.zip"
+                      aria-label="ROM path"
+                      onChange={(event) => setBook((current) => ({ ...current, roms: { ...current.roms, [selected.id]: event.target.value } }))}
+                    />
+                  </label>
+                  <button type="button" onClick={() => void launchSelected()}>Launch</button>
+                  {notice ? <p>{notice}</p> : null}
                 </div>
               </div>
             )}
@@ -346,18 +415,16 @@ export function EmulationView() {
                     type="button"
                     className={value <= stars ? 'on' : ''}
                     aria-label={`${value} stars`}
-                    onClick={() => setRatings((current) => ({ ...current, [selected.id]: value }))}
+                    onClick={() => setBook((current) => ({ ...current, ratings: { ...current.ratings, [selected.id]: value } }))}
                   >
                     ★
                   </button>
                 ))}
               </div>
-              <button type="button" aria-label="Game grid" onClick={() => setScreen('grid')}>
-                ▦
-              </button>
-              <button type="button" aria-label="Game detail" onClick={() => setScreen('detail')}>
-                ▤
-              </button>
+              <button type="button" aria-label="Players" title="Players">🎮</button>
+              <button type="button" aria-label="Manual" title="About this game" onClick={() => setScreen('detail')}>📖</button>
+              <button type="button" aria-label="Favorite" title="Favorite" onClick={() => setBook((current) => ({ ...current, ratings: { ...current.ratings, [selected.id]: 5 } }))}>🏆</button>
+              <button type="button" aria-label="Launch" title="Launch" onClick={() => void launchSelected()}>💾</button>
               <div className="rb-year">{selected.year}</div>
               <div className="rb-flag" title={selected.region} />
             </aside>
@@ -369,17 +436,20 @@ export function EmulationView() {
         <div className="rb-hints">
           {screen === 'console' ? (
             <>
-              <span><b>☰</b>MENU</span>
-              <span><b>↔</b>SYSTEM</span>
-              <span><b>↕</b>MAKER</span>
-              <span><b>A</b>GAMES</span>
+              <span><i className="pad start" />MENU</span>
+              <span><i className="pad dir" />NAVIGATION</span>
+              <span><i className="pad y" />SEARCH</span>
+              <span><i className="pad x" />SELECT</span>
+              <span><i className="pad a" />CHOOSE</span>
             </>
           ) : (
             <>
-              <span><b>☰</b>BACK</span>
-              <span><b>↔</b>MOVE</span>
-              <span><b>★</b>FAVORITE</span>
-              <span><b>A</b>CHOOSE</span>
+              <span><i className="pad select" />OPTIONS</span>
+              <span><i className="pad start" />MENU</span>
+              <span><i className="pad b" />BACK</span>
+              <span><i className="pad y" />SEARCH</span>
+              <span><i className="pad x" />FAVORITE</span>
+              <span><i className="pad a" />CHOOSE</span>
             </>
           )}
           <button type="button" onClick={() => (screen === 'console' ? navigate('/library') : setScreen(screen === 'detail' ? 'grid' : 'console'))} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>

@@ -1,3 +1,5 @@
+import { spawn } from 'child_process';
+
 export class EmulatorService {
   private emulators: any[] = [];
   private roms: Map<string, any[]> = new Map();
@@ -33,7 +35,14 @@ export class EmulatorService {
   }
 
   async launchRom(emulatorId: string, romPath: string, args?: string[]) {
-    return { success: true, pid: 1234 };
+    const emulator = this.emulators.find((item) => item.id === emulatorId);
+    const exe = emulator?.path || args?.[0] || '';
+    if (!exe || !romPath) {
+      return { success: false, error: 'Set an emulator and a ROM you already have on this PC.' };
+    }
+    const child = spawn(exe, [romPath], { detached: true, stdio: 'ignore' });
+    child.unref();
+    return { success: true, pid: child.pid };
   }
 
   async getRoms(system?: string) {

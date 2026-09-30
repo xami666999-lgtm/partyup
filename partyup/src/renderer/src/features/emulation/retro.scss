@@ -346,3 +346,48 @@
 .rb-clock {
   font-variant-numeric: tabular-nums;
 }
+
+.rb-panel label {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  color: #c5d0e0;
+  font-size: 12px;
+  text-align: left;
+}
+
+.rb-panel input {
+  min-height: 32px;
+  border: 1px solid #2c4060;
+  border-radius: 6px;
+  background: #0b121c;
+  color: #e8eef8;
+  padding: 0 8px;
+}
+
+.rb-panel button {
+  margin-top: 10px;
+  border: 0;
+  border-radius: 6px;
+  background: #3d7dff;
+  color: white;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.pad {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: -2px;
+}
+
+.pad.a { background: #2f9e44; }
+.pad.b { background: #e03131; }
+.pad.x { background: #1c7ed6; }
+.pad.y { background: #f08c00; }
+.pad.start,
+.pad.select { width: 18px; height: 10px; border-radius: 3px; background: #8d99a6; }
+.pad.dir { background: #d0d5dd; }

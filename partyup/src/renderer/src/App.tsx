@@ -94,8 +94,8 @@ export function App() {
             <Route path="/plugins" element={<PluginsView />} />
             <Route path="/themes" element={<ThemesView />} />
             <Route path="/settings" element={<SettingsView />} />
-            <Route path="/" element={<Navigate to="/library" replace />} />
-            <Route path="*" element={<Navigate to="/library" replace />} />
+            <Route path="/" element={<Navigate to="/emulation" replace />} />
+            <Route path="*" element={<Navigate to="/emulation" replace />} />
           </Routes>
         </MainContent>
       </div>

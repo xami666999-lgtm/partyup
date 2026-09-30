@@ -855,3 +855,46 @@ body {
     display: none !important;
   }
 }
+
+.pu-setup {
+  display: grid;
+  min-height: 100vh;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  background: radial-gradient(ellipse at 50% 0%, rgba(70, 110, 170, 0.28), transparent 50%), #070b12;
+  color: #e8eef8;
+  text-align: center;
+}
+
+.pu-setup h1 {
+  font-size: 40px;
+  font-weight: 560;
+}
+
+.pu-setup p {
+  max-width: 420px;
+  color: #b7c3d4;
+}
+
+.pu-setup input {
+  width: 320px;
+  min-height: 44px;
+  border: 1px solid #2c4060;
+  border-radius: 8px;
+  background: #101826;
+  color: white;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+.pu-setup button {
+  min-height: 42px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 8px;
+  background: #3d7dff;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}

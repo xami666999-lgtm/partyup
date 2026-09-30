@@ -22,6 +22,7 @@ import { SteamView } from './features/steam/SteamView';
 import { ProfilesView } from './features/profiles/ProfilesView';
 import { BigPictureView } from './features/bigpicture/BigPictureView';
 import { HoardSyncView } from './features/hoardSync/HoardSyncView';
+import { useVault } from './features/local/vault';
 import { useAppStore } from './stores/appStore';
 import { useThemeStore } from './stores/themeStore';
 import { SidebarNavItem } from './types/navigation';
@@ -48,6 +49,9 @@ const NAV_ITEMS: SidebarNavItem[] = [
 export function App() {
   const { sidebarCollapsed, toggleSidebar } = useAppStore();
   const { currentTheme, applyTheme } = useThemeStore();
+  const setupDone = useVault((state) => state.setupDone);
+  const finishSetup = useVault((state) => state.finishSetup);
+  const [profileName, setProfileName] = useState('');
 
   useEffect(() => {
     applyTheme(currentTheme);
@@ -64,6 +68,30 @@ export function App() {
       });
     }
   }, []);
+
+  if (!setupDone) {
+    return (
+      <form
+        className="pu-setup"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!profileName.trim()) return;
+          finishSetup(profileName.trim());
+        }}
+      >
+        <h1>Create your profile</h1>
+        <p>PartyUp keeps this name on this PC. You can add more later in Profiles.</p>
+        <input
+          value={profileName}
+          onChange={(event) => setProfileName(event.target.value)}
+          placeholder="Your name"
+          aria-label="Profile name"
+          autoFocus
+        />
+        <button type="submit">Continue</button>
+      </form>
+    );
+  }
 
   return (
     <div className="app" data-theme={currentTheme}>

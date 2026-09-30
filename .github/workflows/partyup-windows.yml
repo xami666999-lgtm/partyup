@@ -34,7 +34,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "RetroBat-style consoles and games. Stars, favorites, and play history stick. Launch starts an emulator you already have with a ROM you already have. Zip and setup are both attached."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Sidebar links work from the installed app. The first launch asks you to create a profile, then opens the console screen."
           fi
           gh release upload "v$VERSION" dist/*.exe dist/*.zip --clobber
         env:

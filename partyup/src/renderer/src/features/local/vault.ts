@@ -38,6 +38,7 @@ type Vault = {
   emulators: EmulatorPath[];
   tools: ToolCheck[];
   playing: { gameId: string | null; startedAt: number | null };
+  setupDone: boolean;
   settings: {
     confirmLaunch: boolean;
     showHours: boolean;
@@ -65,6 +66,7 @@ type Vault = {
   removeFile: (id: string) => void;
   patchSettings: (patch: Partial<Vault['settings']>) => void;
   addPerson: (name: string) => void;
+  finishSetup: (name: string) => void;
   setActivePerson: (id: string) => void;
   startPlay: (gameId: string) => void;
   stopPlay: () => void;
@@ -129,6 +131,7 @@ export const useVault = create<Vault>()(
         { id: 'rtss', name: 'RTSS', on: false },
       ],
       playing: { gameId: null, startedAt: null },
+      setupDone: false,
       settings: { confirmLaunch: true, showHours: true, emulatorFolder: '', steamFolder: '', discord: false },
       addGame: (name, platform) =>
         set((s) => ({ games: [{ id: id(), name, platform, hours: 0, favorite: false, path: '', notes: '' }, ...s.games] })),
@@ -168,6 +171,11 @@ export const useVault = create<Vault>()(
       patchSettings: (patch) => set((s) => ({ settings: { ...s.settings, ...patch } })),
       addPerson: (name) =>
         set((s) => ({ people: [...s.people, { id: id(), name, color: '#34d399' }] })),
+      finishSetup: (name) =>
+        set(() => {
+          const person = { id: id(), name, color: '#7eb6ff' };
+          return { people: [person], activePerson: person.id, setupDone: true };
+        }),
       setActivePerson: (personId) => set({ activePerson: personId }),
       startPlay: (gameId) => set({ playing: { gameId, startedAt: Date.now() } }),
       stopPlay: () =>

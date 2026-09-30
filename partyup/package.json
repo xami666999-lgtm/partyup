@@ -1,6 +1,6 @@
 {
   "name": "partyup",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "PartyUp - Unified Game Launcher with Steam, Emulation, Mods, Multiplayer, Cloud Gaming & Hoard-style Save Sync",
   "main": "dist/main/index.js",
   "scripts": {

@@ -1,4 +1,6 @@
 import { useVault } from '../local/vault';
+import { DiscordCard, MetadataView } from '../local/board';
+import { LANGS, t } from '../local/i18n';
 import '../local/pages.scss';
 
 export function SettingsView() {
@@ -10,13 +12,26 @@ export function SettingsView() {
   const emulators = useVault((s) => s.emulators);
   const setEmulatorPath = useVault((s) => s.setEmulatorPath);
 
+  const lang = settings.lang || 'en';
+
   return (
     <div className="pu-page">
       <div>
-        <h1>Settings</h1>
-        <p className="sub">Stored on this PC.</p>
+        <h1>{t(lang, 'settings')}</h1>
+        <p className="sub">Stored on this PC. Nine languages. Discord presence is local.</p>
       </div>
       <div className="pu-list">
+        <article>
+          <div style={{ flex: 1 }}>
+            <strong>{t(lang, 'language')}</strong>
+            <select value={lang} aria-label={t(lang, 'language')} onChange={(event) => patch({ lang: event.target.value })} style={{ marginTop: 8 }}>
+              {LANGS.map((code) => (
+                <option key={code} value={code}>{code.toUpperCase()}</option>
+              ))}
+            </select>
+          </div>
+        </article>
+        <DiscordCard />
         <article>
           <div>
             <strong>Confirm before launch</strong>
@@ -73,6 +88,7 @@ export function SettingsView() {
           </article>
         ))}
       </div>
+      <MetadataView />
     </div>
   );
 }

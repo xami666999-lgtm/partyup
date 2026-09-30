@@ -196,6 +196,11 @@ settings: {
     maximize: () => handler('system:maximize'),
     close: () => handler('system:close'),
     setFullscreen: (fullscreen: boolean) => handler('system:set-fullscreen', fullscreen),
+    exists: (target: string) => handler('system:exists', target),
+    launch: (exe: string, args?: string[]) => handler('system:launch', exe, args),
+    hash: (target: string) => handler('system:hash', target),
+    backup: (target: string) => handler('system:backup', target),
+    download: (url: string) => handler('system:download', url),
   },
 });
 

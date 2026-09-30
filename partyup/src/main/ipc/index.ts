@@ -1,4 +1,8 @@
-import { ipcMain, dialog, shell, app } from 'electron';
+import { ipcMain, dialog, shell, app, net } from 'electron';
+import { spawn } from 'child_process';
+import { createHash } from 'crypto';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'fs';
+import { basename, join } from 'path';
 import Store from 'electron-store';
 import { Database } from '../database/Database.js';
 import { PluginManager } from '../plugins/PluginManager.js';
@@ -410,4 +414,41 @@ export function setupIpcHandlers(
   handle('system:set-fullscreen', async (fullscreen: boolean) =>
     mainWindow.setFullScreen(fullscreen)
   );
+  handle('system:exists', async (target: string) => {
+    if (!target || !existsSync(target)) return { ok: false };
+    const info = statSync(target);
+    return { ok: true, size: info.size, dir: info.isDirectory() };
+  });
+  handle('system:launch', async (exe: string, args: string[] = []) => {
+    if (!exe || !existsSync(exe)) return { ok: false, error: 'That file is not on this PC.' };
+    const child = spawn(exe, args, { detached: true, stdio: 'ignore' });
+    child.unref();
+    return { ok: true, pid: child.pid };
+  });
+  handle('system:hash', async (target: string) => {
+    if (!target || !existsSync(target)) return { ok: false, error: 'File not found.' };
+    const info = statSync(target);
+    if (info.isDirectory() || info.size > 80_000_000) return { ok: false, error: 'Pick a file under 80 MB.' };
+    const hash = createHash('sha256').update(readFileSync(target)).digest('hex');
+    return { ok: true, hash };
+  });
+  handle('system:backup', async (target: string) => {
+    if (!target || !existsSync(target) || statSync(target).isDirectory()) return { ok: false, error: 'Pick a save file.' };
+    const dir = join(app.getPath('userData'), 'save-backups');
+    mkdirSync(dir, { recursive: true });
+    const dest = join(dir, `${Date.now()}-${basename(target)}`);
+    copyFileSync(target, dest);
+    return { ok: true, dest };
+  });
+  handle('system:download', async (url: string) => {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return { ok: false, error: 'Only http or https links.' };
+    const dir = join(app.getPath('userData'), 'downloads');
+    mkdirSync(dir, { recursive: true });
+    const response = await net.fetch(url);
+    if (!response.ok) return { ok: false, error: `Download failed (${response.status}).` };
+    const dest = join(dir, basename(parsed.pathname) || 'download.bin');
+    writeFileSync(dest, Buffer.from(await response.arrayBuffer()));
+    return { ok: true, dest };
+  });
 }

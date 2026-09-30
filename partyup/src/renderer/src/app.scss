@@ -888,6 +888,18 @@ body {
   font-size: 16px;
 }
 
+.pu-setup select {
+  display: block;
+  width: 320px;
+  min-height: 44px;
+  margin-top: 6px;
+  border: 1px solid #2c4060;
+  border-radius: 8px;
+  background: #101826;
+  color: white;
+  padding: 0 12px;
+}
+
 .pu-setup button {
   min-height: 42px;
   padding: 0 22px;

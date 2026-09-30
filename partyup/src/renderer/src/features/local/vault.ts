@@ -39,12 +39,15 @@ type Vault = {
   tools: ToolCheck[];
   playing: { gameId: string | null; startedAt: number | null };
   setupDone: boolean;
+  kit: Record<string, { on: boolean; path: string }>;
+  setKit: (id: string, patch: Partial<{ on: boolean; path: string }>) => void;
   settings: {
     confirmLaunch: boolean;
     showHours: boolean;
     emulatorFolder: string;
     steamFolder: string;
     discord: boolean;
+    lang: string;
   };
   addGame: (name: string, platform: string) => void;
   toggleFavorite: (id: string) => void;
@@ -118,11 +121,18 @@ export const useVault = create<Vault>()(
       people: [{ id: 'me', name: 'You', color: '#6366f1' }],
       activePerson: 'me',
       emulators: [
-        { id: 'dolphin', name: 'Dolphin', path: '', ready: false },
-        { id: 'pcsx2', name: 'PCSX2', path: '', ready: false },
-        { id: 'duck', name: 'DuckStation', path: '', ready: false },
         { id: 'retro', name: 'RetroArch', path: '', ready: false },
+        { id: 'dolphin', name: 'Dolphin', path: '', ready: false },
+        { id: 'rpcs3', name: 'RPCS3', path: '', ready: false },
+        { id: 'pcsx2', name: 'PCSX2', path: '', ready: false },
+        { id: 'cemu', name: 'Cemu', path: '', ready: false },
+        { id: 'ryujinx', name: 'Ryujinx', path: '', ready: false },
         { id: 'ppsspp', name: 'PPSSPP', path: '', ready: false },
+        { id: 'duck', name: 'DuckStation', path: '', ready: false },
+        { id: 'melonds', name: 'melonDS', path: '', ready: false },
+        { id: 'vita3k', name: 'Vita3K', path: '', ready: false },
+        { id: 'flycast', name: 'Flycast', path: '', ready: false },
+        { id: 'xenia', name: 'Xenia', path: '', ready: false },
       ],
       tools: [
         { id: 'reshade', name: 'ReShade', on: false },
@@ -132,7 +142,8 @@ export const useVault = create<Vault>()(
       ],
       playing: { gameId: null, startedAt: null },
       setupDone: false,
-      settings: { confirmLaunch: true, showHours: true, emulatorFolder: '', steamFolder: '', discord: false },
+      kit: {},
+      settings: { confirmLaunch: true, showHours: true, emulatorFolder: '', steamFolder: '', discord: false, lang: 'en' },
       addGame: (name, platform) =>
         set((s) => ({ games: [{ id: id(), name, platform, hours: 0, favorite: false, path: '', notes: '' }, ...s.games] })),
       toggleFavorite: (gameId) =>
@@ -176,6 +187,8 @@ export const useVault = create<Vault>()(
           const person = { id: id(), name, color: '#7eb6ff' };
           return { people: [person], activePerson: person.id, setupDone: true };
         }),
+      setKit: (kitId, patch) =>
+        set((s) => ({ kit: { ...s.kit, [kitId]: { on: false, path: '', ...s.kit[kitId], ...patch } } })),
       setActivePerson: (personId) => set({ activePerson: personId }),
       startPlay: (gameId) => set({ playing: { gameId, startedAt: Date.now() } }),
       stopPlay: () =>
@@ -214,8 +227,15 @@ export const useVault = create<Vault>()(
         ...current,
         ...(persisted as Partial<Vault>),
         settings: { ...current.settings, ...((persisted as Partial<Vault>)?.settings ?? {}) },
+        kit: { ...current.kit, ...((persisted as Partial<Vault>)?.kit ?? {}) },
         people: (persisted as Partial<Vault>)?.people?.length ? (persisted as Vault).people : current.people,
-        emulators: (persisted as Partial<Vault>)?.emulators?.length ? (persisted as Vault).emulators : current.emulators,
+        emulators: [
+          ...current.emulators.map((item) => {
+            const saved = (persisted as Partial<Vault>)?.emulators?.find((entry) => entry.id === item.id);
+            return saved ? { ...item, ...saved } : item;
+          }),
+          ...((persisted as Partial<Vault>)?.emulators ?? []).filter((entry) => !current.emulators.some((item) => item.id === entry.id)),
+        ],
         tools: (persisted as Partial<Vault>)?.tools?.length ? (persisted as Vault).tools : current.tools,
       }),
     },

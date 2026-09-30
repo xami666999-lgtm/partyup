@@ -6,44 +6,34 @@ import { MainContent } from './components/Layout/MainContent';
 import { GameGrid } from './features/library/GameGrid';
 import { GameDetail } from './features/library/GameDetail';
 import { LibraryView } from './features/library/LibraryView';
-import { DownloadsView } from './features/downloads/DownloadsView';
 import { EmulationView } from './features/emulation/EmulationView';
-import { ModsView } from './features/mods/ModsView';
-import { MultiplayerView } from './features/multiplayer/MultiplayerView';
-import { CloudGamingView } from './features/cloud/CloudGamingView';
-import { OptimizationView } from './features/optimization/OptimizationView';
-import { AchievementsView } from './features/achievements/AchievementsView';
-import { SavesView } from './features/saves/SavesView';
-import { SocialView } from './features/social/SocialView';
 import { SettingsView } from './features/settings/SettingsView';
-import { PluginsView } from './features/plugins/PluginsView';
 import { ThemesView } from './features/themes/ThemesView';
-import { SteamView } from './features/steam/SteamView';
 import { ProfilesView } from './features/profiles/ProfilesView';
-import { BigPictureView } from './features/bigpicture/BigPictureView';
-import { HoardSyncView } from './features/hoardSync/HoardSyncView';
+import { t } from './features/local/i18n';
+import { DownloadsView, ModsView, MultiplayerView, CloudGamingView, OptimizationView, AchievementsView, SavesView, SocialView, PluginsView, SteamView, HoardSyncView, BigPictureView } from './features/local/board';
 import { useVault } from './features/local/vault';
 import { useAppStore } from './stores/appStore';
 import { useThemeStore } from './stores/themeStore';
 import { SidebarNavItem } from './types/navigation';
 
 const NAV_ITEMS: SidebarNavItem[] = [
-  { id: 'library', label: 'Library', icon: 'gamepad-2', path: '/library' },
-  { id: 'steam', label: 'Steam', icon: 'steam', path: '/steam' },
-  { id: 'downloads', label: 'Downloads', icon: 'download', path: '/downloads' },
-  { id: 'emulation', label: 'Consoles', icon: 'cpu', path: '/emulation' },
-  { id: 'mods', label: 'Mods', icon: 'puzzle', path: '/mods' },
-  { id: 'multiplayer', label: 'Multiplayer', icon: 'users', path: '/multiplayer' },
-  { id: 'cloud', label: 'Cloud Gaming', icon: 'cloud', path: '/cloud' },
-  { id: 'optimization', label: 'Optimization', icon: 'sliders-horizontal', path: '/optimization' },
-  { id: 'achievements', label: 'Achievements', icon: 'trophy', path: '/achievements' },
-  { id: 'saves', label: 'Saves', icon: 'database', path: '/saves' },
-  { id: 'hoard-sync', label: 'Hoard Sync', icon: 'database', path: '/hoard-sync' },
-  { id: 'social', label: 'Friends', icon: 'message-circle', path: '/social' },
-  { id: 'profiles', label: 'Profiles', icon: 'user', path: '/profiles' },
-  { id: 'plugins', label: 'Plugins', icon: 'plug', path: '/plugins' },
-  { id: 'themes', label: 'Themes', icon: 'palette', path: '/themes' },
-  { id: 'settings', label: 'Settings', icon: 'settings', path: '/settings' },
+  { id: 'library', label: 'library', icon: 'gamepad-2', path: '/library' },
+  { id: 'steam', label: 'steam', icon: 'steam', path: '/steam' },
+  { id: 'downloads', label: 'downloads', icon: 'download', path: '/downloads' },
+  { id: 'emulation', label: 'consoles', icon: 'cpu', path: '/emulation' },
+  { id: 'mods', label: 'mods', icon: 'puzzle', path: '/mods' },
+  { id: 'multiplayer', label: 'multiplayer', icon: 'users', path: '/multiplayer' },
+  { id: 'cloud', label: 'cloud', icon: 'cloud', path: '/cloud' },
+  { id: 'optimization', label: 'optimization', icon: 'sliders-horizontal', path: '/optimization' },
+  { id: 'achievements', label: 'achievements', icon: 'trophy', path: '/achievements' },
+  { id: 'saves', label: 'saves', icon: 'database', path: '/saves' },
+  { id: 'hoard-sync', label: 'hoard', icon: 'database', path: '/hoard-sync' },
+  { id: 'social', label: 'friends', icon: 'message-circle', path: '/social' },
+  { id: 'profiles', label: 'profiles', icon: 'user', path: '/profiles' },
+  { id: 'plugins', label: 'plugins', icon: 'plug', path: '/plugins' },
+  { id: 'themes', label: 'themes', icon: 'palette', path: '/themes' },
+  { id: 'settings', label: 'settings', icon: 'settings', path: '/settings' },
 ];
 
 export function App() {
@@ -51,7 +41,10 @@ export function App() {
   const { currentTheme, applyTheme } = useThemeStore();
   const setupDone = useVault((state) => state.setupDone);
   const finishSetup = useVault((state) => state.finishSetup);
+  const lang = useVault((state) => state.settings.lang);
+  const patchSettings = useVault((state) => state.patchSettings);
   const [profileName, setProfileName] = useState('');
+  const navItems = NAV_ITEMS.map((item) => ({ ...item, label: t(lang, item.label) }));
 
   useEffect(() => {
     applyTheme(currentTheme);
@@ -79,8 +72,22 @@ export function App() {
           finishSetup(profileName.trim());
         }}
       >
-        <h1>Create your profile</h1>
-        <p>PartyUp keeps this name on this PC. You can add more later in Profiles.</p>
+        <h1>{t(lang, 'profileTitle')}</h1>
+        <p>{t(lang, 'profileBody')}</p>
+        <label>
+          {t(lang, 'language')}
+          <select value={lang || 'en'} aria-label={t(lang, 'language')} onChange={(event) => patchSettings({ lang: event.target.value })}>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="de">Deutsch</option>
+            <option value="ja">日本語</option>
+            <option value="zh">中文</option>
+            <option value="ru">Русский</option>
+            <option value="pt">Português</option>
+            <option value="it">Italiano</option>
+          </select>
+        </label>
         <input
           value={profileName}
           onChange={(event) => setProfileName(event.target.value)}
@@ -88,7 +95,7 @@ export function App() {
           aria-label="Profile name"
           autoFocus
         />
-        <button type="submit">Continue</button>
+        <button type="submit">{t(lang, 'continue')}</button>
       </form>
     );
   }
@@ -99,7 +106,7 @@ export function App() {
       <div className="app-body">
         <Sidebar
           collapsed={sidebarCollapsed}
-          items={NAV_ITEMS}
+          items={navItems}
         />
         <MainContent>
           <Routes>

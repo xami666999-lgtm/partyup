@@ -34,7 +34,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Sidebar links work from the installed app. The first launch asks you to create a profile, then opens the console screen."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "First launch asks for a profile. Sidebar pages open. Languages: EN ES FR DE JA ZH RU PT IT. Local launch, verify, backup, and SHA256. No DLC unlockers, Hydra, or depot downloads."
           fi
           gh release upload "v$VERSION" dist/*.exe dist/*.zip --clobber
         env:

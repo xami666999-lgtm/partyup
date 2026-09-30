@@ -1,140 +1,69 @@
-import React, { useEffect, useState } from 'react';
-import { Grid, List, Layout, Filter, Search, Plus, ChevronDown, MoreHorizontal } from 'lucide-react';
-import { useAppStore } from '../../stores/appStore';
-import { api } from '../../utils/api';
-import type { Game, GameView } from '../../types';
-import { GameGrid } from './GameGrid';
-
-interface LibraryViewProps {}
+import { useState } from 'react';
+import { useVault } from '../local/vault';
+import '../local/pages.scss';
 
 export function LibraryView() {
-  const { activeView, setActiveView, searchQuery, setSearchQuery, selectedGameIds, toggleGameSelection, clearSelection } = useAppStore();
-  const [games, setGames] = useState<Game[]>([]);
-  const [views, setViews] = useState<GameView[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [showViewMenu, setShowViewMenu] = useState(false);
-
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [gamesData, viewsData, statsData] = await Promise.all([
-        api.library.getGames(),
-        api.library.getViews(),
-        api.library.getStats(),
-      ]);
-      setGames(gamesData || []);
-      setViews(viewsData || []);
-      setStats(statsData);
-    } catch (error) {
-      console.error('Failed to load library:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredGames = games.filter(game =>
-    game.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    game.platform.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const handleLaunchGame = async (game: Game) => {
-    if (game.platform === 'steam' && game.customFields?.appId) {
-      await api.steam.launchGame(game.customFields.appId);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex-center" style={{ height: '100%' }}>
-        <div className="skeleton" style={{ width: 200, height: 200 }} />
-      </div>
-    );
-  }
+  const games = useVault((s) => s.games);
+  const plugins = useVault((s) => s.plugins);
+  const addGame = useVault((s) => s.addGame);
+  const toggleFavorite = useVault((s) => s.toggleFavorite);
+  const setGamePath = useVault((s) => s.setGamePath);
+  const removeGame = useVault((s) => s.removeGame);
+  const [name, setName] = useState('');
+  const [platform, setPlatform] = useState('PC');
+  const [query, setQuery] = useState('');
+  const hoursOn = plugins.find((p) => p.id === 'pl1')?.enabled !== false;
+  const favoritesFirst = plugins.find((p) => p.id === 'pl2')?.enabled !== false;
+  const shown = games
+    .filter((game) => game.name.toLowerCase().includes(query.toLowerCase()))
+    .slice()
+    .sort((a, b) => (favoritesFirst && a.favorite !== b.favorite ? Number(b.favorite) - Number(a.favorite) : 0));
 
   return (
-    <div className="library-view">
-      <div className="view-header">
-        <div className="header-left">
-          <h1 className="view-title">Library</h1>
-          {stats && (
-            <span className="view-count">{stats.totalGames} games • {Math.round(stats.totalPlaytime / 60)}h played</span>
-          )}
-        </div>
-        <div className="header-right">
-          <div className="search-wrapper">
-            <Search size={18} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search library..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-          </div>
-          <div className="view-controls">
-            <button
-              className={`icon-btn ${activeView === 'grid' ? 'active' : ''}`}
-              onClick={() => setActiveView('grid')}
-              aria-label="Grid view"
-            >
-              <Grid size={20} />
-            </button>
-            <button
-              className={`icon-btn ${activeView === 'list' ? 'active' : ''}`}
-              onClick={() => setActiveView('list')}
-              aria-label="List view"
-            >
-              <List size={20} />
-            </button>
-            <div className="dropdown">
-              <button className="icon-btn" onClick={() => setShowViewMenu(!showViewMenu)} aria-label="View options">
-                <MoreHorizontal size={20} />
-              </button>
-              {showViewMenu && (
-                <div className="dropdown-menu">
-                  {views.map(view => (
-                    <button key={view.id} className="dropdown-item" onClick={() => setActiveView(view.id)}>
-                      {view.name}
-                    </button>
-                  ))}
-                  <hr className="dropdown-divider" />
-                  <button className="dropdown-item" onClick={() => setActiveView('grid')}>
-                    <Plus size={14} /> Create Custom View
-                  </button>
-                </div>
-              )}
-            </div>
-            <button className="btn btn-primary">
-              <Plus size={16} /> Add Game
-            </button>
-          </div>
-        </div>
+    <div className="pu-page">
+      <div>
+        <h1>Library</h1>
+        <p className="sub">{games.length} games you added. PartyUp launches a path on this PC. It does not fetch games.</p>
       </div>
-
-      <GameGrid
-        games={filteredGames}
-        onLaunch={handleLaunchGame}
-        selectedIds={selectedGameIds}
-        onSelect={toggleGameSelection}
-        view={activeView}
-      />
-
-      {filteredGames.length === 0 && !loading && (
-        <div className="empty-state">
-          <Gamepad2 size={64} className="empty-icon" />
-          <h3>No games found</h3>
-          <p>{searchQuery ? 'Try adjusting your search' : 'Add games to your library to get started'}</p>
-          <button className="btn btn-primary" style={{ marginTop: 'var(--spacing-md)' }}>
-            <Plus size={16} /> Add Game
-          </button>
-        </div>
-      )}
+      <form
+        className="pu-row"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!name.trim()) return;
+          addGame(name.trim(), platform);
+          setName('');
+        }}
+      >
+        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search" aria-label="Search library" />
+        <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Add a game you own" aria-label="Game name" />
+        <select value={platform} onChange={(event) => setPlatform(event.target.value)} aria-label="Platform">
+          <option>PC</option>
+          <option>Steam</option>
+          <option>Epic</option>
+          <option>GOG</option>
+        </select>
+        <button className="btn btn-primary" type="submit">Add</button>
+      </form>
+      <div className="pu-grid">
+        {shown.map((game) => (
+          <article key={game.id} className="pu-card">
+            <h2>{game.favorite ? '★ ' : ''}{game.name}</h2>
+            <p>{game.platform}{hoursOn ? ` · ${game.hours}h` : ''}</p>
+            <input
+              value={game.path}
+              placeholder="Path to the game on this PC"
+              aria-label={`${game.name} path`}
+              onChange={(event) => setGamePath(game.id, event.target.value)}
+            />
+            <div className="pu-row">
+              <button className="btn btn-secondary btn-sm" type="button" onClick={() => toggleFavorite(game.id)}>
+                {game.favorite ? 'Unfavorite' : 'Favorite'}
+              </button>
+              <button className="btn btn-ghost btn-sm" type="button" onClick={() => removeGame(game.id)}>Remove</button>
+            </div>
+          </article>
+        ))}
+      </div>
     </div>
   );
 }
-
-import { Gamepad2, Play, Clock, Heart, MoreHorizontal, Layout, Filter } from 'lucide-react';

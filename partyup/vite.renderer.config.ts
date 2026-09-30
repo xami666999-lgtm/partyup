@@ -24,6 +24,9 @@ export default defineConfig({
       '@shared': resolve(__dirname, 'src/shared'),
     },
   },
+  css: {
+    postcss: { plugins: [] },
+  },
   server: {
     port: 3000,
     strictPort: true,

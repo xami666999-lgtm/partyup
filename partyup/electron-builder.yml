@@ -14,9 +14,7 @@ win:
     - target: nsis
       arch:
         - x64
-    - target: portable
-      arch:
-        - x64
+  icon: assets/icon.png
   publisherName: PartyUp Team
   signAndEditExecutable: false
 nsis:
@@ -31,23 +29,6 @@ portable:
   artifactName: PartyUp-${version}-portable.${ext}
 publish:
   - provider: github
-    owner: PartyUp
+    owner: xami666999-lgtm
     repo: partyup
-extraResources:
-  - from: src/resources
-    to: resources
-    filter:
-      - '**/*'
-  - from: plugins
-    to: plugins
-    filter:
-      - '**/*'
-  - from: node_modules/sql.js/dist
-    to: sql.js
-    filter:
-      - 'sql-wasm.wasm'
-extraFiles:
-  - from: build/velo
-    to: velo
-    filter:
-      - '**/*'
+

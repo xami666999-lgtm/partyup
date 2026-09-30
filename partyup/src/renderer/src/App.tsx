@@ -26,7 +26,7 @@ import { SidebarNavItem } from './types/navigation';
 const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'library', label: 'Library', icon: 'gamepad-2', path: '/library' },
   { id: 'downloads', label: 'Downloads', icon: 'download', path: '/downloads' },
-  { id: 'emulation', label: 'Emulation', icon: 'cpu', path: '/emulation' },
+  { id: 'emulation', label: 'Consoles', icon: 'cpu', path: '/emulation' },
   { id: 'mods', label: 'Mods', icon: 'puzzle', path: '/mods' },
   { id: 'multiplayer', label: 'Multiplayer', icon: 'users', path: '/multiplayer' },
   { id: 'cloud', label: 'Cloud Gaming', icon: 'cloud', path: '/cloud' },

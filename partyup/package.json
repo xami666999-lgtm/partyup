@@ -1,6 +1,6 @@
 {
   "name": "partyup",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "PartyUp - Unified Game Launcher with Steam, Emulation, Mods, Multiplayer, Cloud Gaming & Hoard-style Save Sync",
   "main": "dist/main/index.js",
   "scripts": {
@@ -168,7 +168,7 @@
           ]
         }
       ],
-      "icon": "build/icon.ico",
+      "icon": "assets/icon.ico",
       "publisherName": "PartyUp Team",
       "signAndEditExecutable": false
     },
@@ -180,10 +180,8 @@
       "shortcutName": "PartyUp",
       "uninstallDisplayName": "PartyUp",
       "license": "LICENSE.txt",
-      "installerIcon": "build/icon.ico",
-      "uninstallerIcon": "build/icon.ico",
-      "installerHeaderIcon": "build/icon.ico",
-      "include": "build/installer.nsh"
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico"
     },
     "portable": {
       "artifactName": "PartyUp-${version}-portable.${ext}"
@@ -193,31 +191,6 @@
         "provider": "github",
         "owner": "xami666999-lgtm",
         "repo": "partyup"
-      }
-    ],
-    "extraResources": [
-      {
-        "from": "src/resources",
-        "to": "resources",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "plugins",
-        "to": "plugins",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
-    "extraFiles": [
-      {
-        "from": "build/velo",
-        "to": "velo",
-        "filter": [
-          "**/*"
-        ]
       }
     ]
   },

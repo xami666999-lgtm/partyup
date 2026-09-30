@@ -1,4 +1,4 @@
-﻿appId: com.PartyUp.app
+﻿appId: com.partyup.desktop
 productName: PartyUp
 copyright: "Copyright © 2026 PartyUp Team"
 directories:
@@ -22,8 +22,8 @@ win:
   signAndEditExecutable: false
 nsis:
   oneClick: false
-  perMachine: true
-  allowElevation: true
+  perMachine: false
+  allowElevation: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true

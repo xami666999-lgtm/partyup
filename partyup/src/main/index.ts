@@ -14,6 +14,9 @@ import { Database } from './database/Database.js';
 
 declare const __dirname: string;
 
+app.setPath('userData', join(app.getPath('appData'), 'PartyUpDesktop'));
+const gotInstanceLock = app.requestSingleInstanceLock();
+
 const store = new Store<any>({
   name: 'partyup-config',
   defaults: {
@@ -70,7 +73,8 @@ async function createWindow() {
       allowRunningInsecureContent: isDev,
       experimentalFeatures: true,
     },
-    show: false,
+    show: true,
+    skipTaskbar: false,
     backgroundColor: '#0f0f1a',
     icon: join(__dirname, '../../build/icon.ico'),
   });
@@ -114,11 +118,6 @@ async function initializeApp() {
 
     services = await initializeServices(store, database, pluginManager);
 
-    if (!app.requestSingleInstanceLock()) {
-      app.quit();
-      return;
-    }
-
     await app.whenReady();
 
     await createWindow();
@@ -133,10 +132,10 @@ async function initializeApp() {
     setupAutoUpdater();
 
     app.on('second-instance', () => {
-      if (mainWindow) {
-        if (mainWindow.isMinimized()) mainWindow.restore();
-        mainWindow.focus();
-      }
+      if (!mainWindow) return;
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
     });
 
     app.on('activate', async () => {
@@ -207,6 +206,10 @@ app.on('before-quit', async () => {
   await database.close();
 });
 
-initializeApp();
+if (gotInstanceLock) {
+  initializeApp();
+} else {
+  app.quit();
+}
 
 export { mainWindow, services, store, database, pluginManager, themeManager };

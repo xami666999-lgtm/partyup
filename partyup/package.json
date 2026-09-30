@@ -1,6 +1,6 @@
 {
   "name": "partyup",
-  "version": "2.3.2",
+  "version": "2.4.0",
   "description": "PartyUp - Unified Game Launcher with Steam, Emulation, Mods, Multiplayer, Cloud Gaming & Hoard-style Save Sync",
   "main": "dist/main/index.js",
   "scripts": {
@@ -140,7 +140,7 @@
     "wait-on": "^7.2.0"
   },
   "build": {
-    "appId": "com.PartyUp.app",
+    "appId": "com.partyup.desktop",
     "productName": "PartyUp",
     "copyright": "Copyright © 2026 PartyUp Team",
     "directories": {
@@ -174,8 +174,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "perMachine": true,
-      "allowElevation": true,
+      "perMachine": false,
+      "allowElevation": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,

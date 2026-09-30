@@ -1,4 +1,4 @@
-appId: com.PartyUp.app
+﻿appId: com.PartyUp.app
 productName: PartyUp
 copyright: "Copyright © 2026 PartyUp Team"
 directories:
@@ -14,7 +14,9 @@ win:
     - target: nsis
       arch:
         - x64
-  icon: assets/icon.png
+    - target: portable
+      arch:
+        - x64
   publisherName: PartyUp Team
   signAndEditExecutable: false
 nsis:
@@ -25,10 +27,10 @@ nsis:
   shortcutName: PartyUp
   uninstallDisplayName: PartyUp
   license: LICENSE.txt
+  include: build/installer.nsh
 portable:
-  artifactName: PartyUp-${version}-portable.${ext}
+  artifactName: "PartyUp-${version}-portable.${ext}"
 publish:
   - provider: github
     owner: xami666999-lgtm
     repo: partyup
-

@@ -14,7 +14,7 @@ win:
     - target: nsis
       arch:
         - x64
-    - target: portable
+    - target: zip
       arch:
         - x64
   publisherName: PartyUp Team
@@ -31,8 +31,7 @@ nsis:
   uninstallDisplayName: PartyUp
   license: LICENSE.txt
   include: installer.nsh
-portable:
-  artifactName: "PartyUp-${version}-portable.${ext}"
+  artifactName: PartyUp-Setup-${version}.${ext}
 publish:
   - provider: github
     owner: xami666999-lgtm

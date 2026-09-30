@@ -22,12 +22,15 @@ win:
   signAndEditExecutable: false
 nsis:
   oneClick: false
+  perMachine: true
+  allowElevation: true
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: PartyUp
   uninstallDisplayName: PartyUp
   license: LICENSE.txt
+  include: installer.nsh
 portable:
   artifactName: "PartyUp-${version}-portable.${ext}"
 publish:

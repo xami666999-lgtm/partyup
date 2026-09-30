@@ -34,7 +34,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Steam library, playtime, profiles, Big Picture, Hoard snapshots, emulator paths, and Hydra/Playnite themes."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Installer closes a running PartyUp instead of stopping on that dialog."
           fi
           gh release upload "v$VERSION" dist/*.exe --clobber
         env:

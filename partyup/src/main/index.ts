@@ -1,7 +1,9 @@
 import { app, BrowserWindow, ipcMain, dialog, shell, nativeTheme, session, protocol } from 'electron';
+import { execFile, spawn } from 'child_process';
+import { createWriteStream } from 'fs';
+import { mkdir } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
@@ -121,6 +123,7 @@ async function initializeApp() {
     await app.whenReady();
 
     await createWindow();
+    ensureDesktopShortcut('PartyUp');
 
     // Now set the mainWindow reference in ThemeManager
     if (mainWindow) {
@@ -158,31 +161,113 @@ async function initializeApp() {
   }
 }
 
-function setupAutoUpdater() {
-  if (isDev) return;
+function ensureDesktopShortcut(name: string) {
+  if (process.platform !== 'win32') return;
+  const desktop = app.getPath('desktop');
+  const lnk = join(desktop, `${name}.lnk`);
+  const exe = process.execPath;
+  const work = dirname(exe);
+  const quote = (value: string) => value.replace(/'/g, "''");
+  const script = [
+    '$shell = New-Object -ComObject WScript.Shell',
+    `$shortcut = $shell.CreateShortcut('${quote(lnk)}')`,
+    `$shortcut.TargetPath = '${quote(exe)}'`,
+    `$shortcut.WorkingDirectory = '${quote(work)}'`,
+    `$shortcut.IconLocation = '${quote(exe)}'`,
+    '$shortcut.Save()',
+  ].join('; ');
+  execFile('powershell.exe', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { windowsHide: true });
+}
 
-  autoUpdater.logger = log;
-  autoUpdater.checkForUpdatesAndNotify();
+type UpdateState = { status: string; version: string; remote: string; percent: number; message: string };
+let installerPath = '';
+let checking = false;
+let updateState: UpdateState = { status: 'idle', version: '', remote: '', percent: 0, message: '' };
 
-  autoUpdater.on('update-available', () => {
-    log.info('Update available');
-  });
+function sendUpdate(patch: Partial<UpdateState>) {
+  updateState = { ...updateState, ...patch, version: app.getVersion() };
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('updater:state', updateState);
+}
 
-  autoUpdater.on('update-downloaded', () => {
-    log.info('Update downloaded');
-    dialog.showMessageBox(mainWindow!, {
-      type: 'info',
-      title: 'Update Ready',
-      message: 'A new version has been downloaded. Restart to apply?',
-      buttons: ['Restart Now', 'Later'],
-    }).then(({ response }) => {
-      if (response === 0) autoUpdater.quitAndInstall();
+function isNewer(remote: string, local: string) {
+  const parse = (value: string) => value.replace(/^v/, '').split('.').map((part) => Number.parseInt(part, 10) || 0);
+  const next = parse(remote);
+  const current = parse(local);
+  const length = Math.max(next.length, current.length);
+  for (let i = 0; i < length; i += 1) {
+    if ((next[i] || 0) !== (current[i] || 0)) return (next[i] || 0) > (current[i] || 0);
+  }
+  return false;
+}
+
+async function checkForUpdates() {
+  updateState = { ...updateState, version: app.getVersion() };
+  if (isDev) {
+    sendUpdate({ status: 'dev', message: 'Updates install in the packaged app.' });
+    return updateState;
+  }
+  if (checking) return updateState;
+  checking = true;
+  sendUpdate({ status: 'checking', message: '' });
+  try {
+    const response = await fetch('https://api.github.com/repos/xami666999-lgtm/partyup/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'PartyUp' },
     });
-  });
+    if (!response.ok) throw new Error('GitHub did not answer.');
+    const release = await response.json() as { tag_name?: string; assets?: { name: string; browser_download_url: string; size?: number }[] };
+    const remote = String(release.tag_name || '').replace(/^v/, '');
+    const asset = (release.assets || []).find((item) => item.name.endsWith('.exe'));
+    if (!asset || !isNewer(remote, app.getVersion())) {
+      sendUpdate({ status: 'current', remote, percent: 0 });
+      return updateState;
+    }
+    sendUpdate({ status: 'downloading', remote, percent: 0 });
+    const dir = join(app.getPath('temp'), 'partyup-updates');
+    await mkdir(dir, { recursive: true });
+    installerPath = join(dir, asset.name);
+    const download = await fetch(asset.browser_download_url, { headers: { Accept: 'application/octet-stream', 'User-Agent': 'PartyUp' } });
+    if (!download.ok || !download.body) throw new Error('The update did not download.');
+    const total = Number(download.headers.get('content-length') || asset.size || 0);
+    const file = createWriteStream(installerPath);
+    const reader = download.body.getReader();
+    let received = 0;
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      received += chunk.value.byteLength;
+      if (total) sendUpdate({ percent: Math.min(99, Math.round((received / total) * 100)) });
+      if (!file.write(Buffer.from(chunk.value))) await new Promise((resolve) => file.once('drain', resolve));
+    }
+    await new Promise<void>((resolve, reject) => {
+      file.on('error', reject);
+      file.end(() => resolve());
+    });
+    sendUpdate({ status: 'ready', remote, percent: 100 });
+  } catch (error) {
+    installerPath = '';
+    sendUpdate({ status: 'error', message: error instanceof Error ? error.message : 'Update failed.' });
+  } finally {
+    checking = false;
+  }
+  return updateState;
+}
 
-  autoUpdater.on('error', (err) => {
-    log.error('Auto-updater error:', err);
+function installUpdate() {
+  if (!installerPath) return;
+  const child = spawn(installerPath, [], { detached: true, stdio: 'ignore' });
+  child.unref();
+  app.quit();
+}
+
+function setupAutoUpdater() {
+  ipcMain.handle('updater:state', () => ({ ...updateState, version: app.getVersion() }));
+  ipcMain.handle('updater:check', () => checkForUpdates());
+  ipcMain.handle('updater:install', () => installUpdate());
+  ipcMain.handle('updater:shortcut', () => {
+    ensureDesktopShortcut('PartyUp');
+    return { ok: true, path: join(app.getPath('desktop'), 'PartyUp.lnk') };
   });
+  if (!isDev) void checkForUpdates();
 }
 
 app.on('window-all-closed', () => {

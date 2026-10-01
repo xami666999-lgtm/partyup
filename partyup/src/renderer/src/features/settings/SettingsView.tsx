@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useVault } from '../local/vault';
 import { DiscordCard, MetadataView } from '../local/board';
 import { LANGS, t } from '../local/i18n';
@@ -11,6 +12,15 @@ export function SettingsView() {
   const discord = plugins.find((plugin) => plugin.id === 'pl3');
   const emulators = useVault((s) => s.emulators);
   const setEmulatorPath = useVault((s) => s.setEmulatorPath);
+  const [update, setUpdate] = useState({ status: 'idle', version: '', remote: '', percent: 0, message: '' });
+  const [shortcut, setShortcut] = useState('');
+
+  useEffect(() => {
+    const ipc = window.electron?.ipc;
+    if (!ipc) return;
+    void ipc.invoke('updater:state').then((state) => setUpdate(state as typeof update));
+    return ipc.on('updater:state', (state) => setUpdate(state as typeof update));
+  }, []);
 
   const lang = settings.lang || 'en';
 
@@ -32,6 +42,54 @@ export function SettingsView() {
           </div>
         </article>
         <DiscordCard />
+        <article>
+          <div style={{ flex: 1 }}>
+            <strong>Updates</strong>
+            <p>
+              {update.status === 'checking'
+                ? 'Checking GitHub…'
+                : update.status === 'downloading'
+                  ? `Downloading ${update.percent}%`
+                  : update.status === 'ready'
+                    ? `Version ${update.remote} is ready.`
+                    : update.status === 'current'
+                      ? 'You are on the latest version.'
+                      : update.status === 'error'
+                        ? update.message || 'The update did not finish.'
+                        : update.status === 'dev'
+                          ? 'Updates install in the packaged app.'
+                          : `Version ${update.version || '2.5.3'}. PartyUp checks GitHub when it opens.`}
+            </p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <button
+                className="btn btn-primary btn-sm"
+                type="button"
+                disabled={update.status === 'checking' || update.status === 'downloading'}
+                onClick={() => void window.electron?.ipc.invoke('updater:check').then((state) => setUpdate(state as typeof update))}
+              >
+                Check for updates
+              </button>
+              {update.status === 'ready' ? (
+                <button className="btn btn-secondary btn-sm" type="button" onClick={() => void window.electron?.ipc.invoke('updater:install')}>
+                  Install and restart
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </article>
+        <article>
+          <div style={{ flex: 1 }}>
+            <strong>Desktop shortcut</strong>
+            <p>{shortcut || 'A PartyUp shortcut is placed on the desktop when the app opens.'}</p>
+          </div>
+          <button
+            className="btn btn-secondary btn-sm"
+            type="button"
+            onClick={() => void window.electron?.ipc.invoke('updater:shortcut').then((result) => setShortcut(`Saved ${(result as { path?: string }).path || ''}`))}
+          >
+            Create shortcut
+          </button>
+        </article>
         <article>
           <div>
             <strong>Confirm before launch</strong>

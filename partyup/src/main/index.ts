@@ -189,6 +189,15 @@ function sendUpdate(patch: Partial<UpdateState>) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('updater:state', updateState);
 }
 
+const DEFAULT_REPO = 'xami666999-lgtm/partyup';
+
+function cleanRepo(value: unknown) {
+  const repo = String(value ?? '').trim();
+  return /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo) ? repo : DEFAULT_REPO;
+}
+
+let updateRepo = cleanRepo(store.get('updateRepo'));
+
 function isNewer(remote: string, local: string) {
   const parse = (value: string) => value.replace(/^v/, '').split('.').map((part) => Number.parseInt(part, 10) || 0);
   const next = parse(remote);
@@ -210,7 +219,7 @@ async function checkForUpdates() {
   checking = true;
   sendUpdate({ status: 'checking', message: '' });
   try {
-    const response = await fetch('https://api.github.com/repos/xami666999-lgtm/partyup/releases/latest', {
+    const response = await fetch(`https://api.github.com/repos/${updateRepo}/releases/latest`, {
       headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'PartyUp' },
     });
     if (!response.ok) throw new Error('GitHub did not answer.');
@@ -260,7 +269,12 @@ function installUpdate() {
 }
 
 function setupAutoUpdater() {
-  ipcMain.handle('updater:state', () => ({ ...updateState, version: app.getVersion() }));
+  ipcMain.handle('updater:state', () => ({ ...updateState, version: app.getVersion(), repo: updateRepo }));
+  ipcMain.handle('updater:repo', (_event, value: string) => {
+    updateRepo = cleanRepo(value);
+    store.set('updateRepo', updateRepo);
+    return updateRepo;
+  });
   ipcMain.handle('updater:check', () => checkForUpdates());
   ipcMain.handle('updater:install', () => installUpdate());
   ipcMain.handle('updater:shortcut', () => {

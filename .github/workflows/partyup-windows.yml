@@ -2,6 +2,11 @@ name: PartyUp Windows
 
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'partyup/package.json'
+      - '.github/workflows/partyup-windows.yml'
 
 permissions:
   contents: write
@@ -34,7 +39,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Settings can check GitHub and install the next version. A desktop shortcut is created when PartyUp opens."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Settings can follow any owner/repo. A push of a higher version publishes the installer for every installed copy."
           fi
           gh release upload "v$VERSION" dist/*.exe dist/*.zip --clobber
         env:

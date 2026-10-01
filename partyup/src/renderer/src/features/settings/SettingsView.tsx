@@ -12,13 +12,18 @@ export function SettingsView() {
   const discord = plugins.find((plugin) => plugin.id === 'pl3');
   const emulators = useVault((s) => s.emulators);
   const setEmulatorPath = useVault((s) => s.setEmulatorPath);
-  const [update, setUpdate] = useState({ status: 'idle', version: '', remote: '', percent: 0, message: '' });
+  const [update, setUpdate] = useState({ status: 'idle', version: '', remote: '', percent: 0, message: '', repo: 'xami666999-lgtm/partyup' });
+  const [repo, setRepo] = useState('xami666999-lgtm/partyup');
   const [shortcut, setShortcut] = useState('');
 
   useEffect(() => {
     const ipc = window.electron?.ipc;
     if (!ipc) return;
-    void ipc.invoke('updater:state').then((state) => setUpdate(state as typeof update));
+    void ipc.invoke('updater:state').then((state) => {
+      const next = state as typeof update;
+      setUpdate(next);
+      if (next.repo) setRepo(next.repo);
+    });
     return ipc.on('updater:state', (state) => setUpdate(state as typeof update));
   }, []);
 
@@ -45,6 +50,15 @@ export function SettingsView() {
         <article>
           <div style={{ flex: 1 }}>
             <strong>Updates</strong>
+            <p>Any account that can push this repo can publish the next version. Change the feed if another copy maintains the releases.</p>
+            <input
+              value={repo}
+              aria-label="Update repository"
+              placeholder="owner/partyup"
+              onChange={(event) => setRepo(event.target.value)}
+              onBlur={() => void window.electron?.ipc.invoke('updater:repo', repo).then((saved) => setRepo(String(saved || repo)))}
+              style={{ marginTop: 8, width: '100%' }}
+            />
             <p>
               {update.status === 'checking'
                 ? 'Checking GitHub…'

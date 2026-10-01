@@ -236,7 +236,7 @@ async function checkForUpdates() {
       if (chunk.done) break;
       received += chunk.value.byteLength;
       if (total) sendUpdate({ percent: Math.min(99, Math.round((received / total) * 100)) });
-      if (!file.write(Buffer.from(chunk.value))) await new Promise((resolve) => file.once('drain', resolve));
+      if (!file.write(Buffer.from(chunk.value))) await new Promise<void>((resolve) => file.once('drain', () => resolve()));
     }
     await new Promise<void>((resolve, reject) => {
       file.on('error', reject);

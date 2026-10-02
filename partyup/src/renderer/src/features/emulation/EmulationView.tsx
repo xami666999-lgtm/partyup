@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './retro.scss';
 import { EmuDeckPanel } from './EmuDeckPanel';
@@ -14,6 +14,8 @@ type Game = {
   blurb: string;
   hue: number;
   stars: number;
+  romPath?: string;
+  emulatorId?: string;
 };
 
 type System = {
@@ -130,6 +132,36 @@ function wrap(index: number, length: number) {
   return ((index % length) + length) % length;
 }
 
+function ownedGame(rom: { system: string; label: string; name: string; path: string; emulator: string }): Game {
+  let hue = 0;
+  for (const char of rom.name) hue = (hue + char.charCodeAt(0) * 17) % 360;
+  return {
+    id: `rom:${rom.path}`,
+    name: rom.name,
+    short: rom.name,
+    year: 0,
+    publisher: rom.label,
+    region: 'Your copy',
+    players: '1',
+    hue,
+    stars: 0,
+    blurb: `Plays in PartyUp with ${rom.emulator}. Close the game and you are back on this screen.`,
+    romPath: rom.path,
+    emulatorId: rom.emulator,
+  };
+}
+
+const CONSOLE_FOLDER: Record<string, string> = {
+  nes: 'nes',
+  snes: 'snes',
+  gb: 'gb',
+  ms: 'mastersystem',
+  md: 'megadrive',
+  gg: 'gamegear',
+};
+
+type OwnedRom = { system: string; label: string; name: string; path: string; emulator: string };
+
 function game(
   id: string,
   name: string,
@@ -173,7 +205,7 @@ function Cover({ item, tall = false }: { item: Game; tall?: boolean }) {
     <div className={`rb-cover${tall ? ' tall' : ''}`} style={{ ['--h' as string]: item.hue }}>
       <small>{item.publisher}</small>
       <b>{item.short}</b>
-      <small>{item.year}</small>
+      <small>{item.year || ''}</small>
     </div>
   );
 }
@@ -200,16 +232,61 @@ export function EmulationView() {
   const [book, setBook] = useState<PlayBook>(loadBook);
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(() => new Date());
+  const [library, setLibrary] = useState<OwnedRom[]>([]);
 
-  const maker = MAKERS[makerIndex];
-  const system = maker.systems[systemIndex];
-  const games = system.games;
-  const selected = games[Math.min(gameIndex, games.length - 1)];
+  const makers = useMemo(() => {
+    const grouped = new Map<string, OwnedRom[]>();
+    for (const rom of library) {
+      const list = grouped.get(rom.system) || [];
+      list.push(rom);
+      grouped.set(rom.system, list);
+    }
+    const systems: System[] = grouped.size
+      ? [...grouped.entries()].map(([id, hits]) => ({
+          id,
+          word: hits[0].label,
+          className: id,
+          year: 0,
+          games: hits.map(ownedGame),
+        }))
+      : [
+          {
+            id: 'empty',
+            word: 'Library',
+            className: 'nes',
+            year: 0,
+            games: [
+              game('empty', 'No games yet', 'Empty', 2026, 'PartyUp', 210, 0, 'Open Setup, create the ROM folders, and put a game you own in the matching folder. Play starts here.'),
+            ],
+          },
+        ];
+    return [...MAKERS, { id: 'yours', name: 'Your games', line: 'Play starts in PartyUp', year: new Date().getFullYear(), systems }];
+  }, [library]);
+
+  const maker = makers[Math.min(makerIndex, makers.length - 1)];
+  const system = maker.systems[Math.min(systemIndex, maker.systems.length - 1)];
+  const folder = CONSOLE_FOLDER[system.id] || system.id;
+  const owned = library.filter((rom) => rom.system === folder).map(ownedGame);
+  const games = owned.length ? owned : system.games;
+  const selected = games[Math.min(gameIndex, Math.max(games.length - 1, 0))];
   const stars = book.ratings[selected.id] ?? selected.stars;
 
   useEffect(() => {
     localStorage.setItem('partyup-retro', JSON.stringify(book));
   }, [book]);
+
+  useEffect(() => {
+    if (screen === 'setup') return;
+    const api = (window as unknown as { api?: { emudeck?: { scan?: () => Promise<{ roms?: OwnedRom[] }> } } }).api?.emudeck;
+    void api?.scan?.()
+      .then((result) => setLibrary(result?.roms || []))
+      .catch(() => undefined);
+    const off = (window as unknown as { electron?: { ipc?: { on?: (channel: string, cb: () => void) => () => void } } }).electron?.ipc?.on?.(
+      'emudeck:exited',
+      () => setNotice('Game closed. You are back in PartyUp.'),
+    );
+    return () => off?.();
+  }, [screen]);
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 15000);
@@ -236,7 +313,8 @@ export function EmulationView() {
         if (screen === 'console') {
           setGameIndex(0);
           setScreen('grid');
-        } else if (screen === 'grid') setScreen('detail');
+        } else if (screen === 'grid' && selected.romPath) void launchSelected();
+        else if (screen === 'grid') setScreen('detail');
         else void launchSelected();
         return;
       }
@@ -248,11 +326,11 @@ export function EmulationView() {
         if (key === 'ArrowRight') setSystemIndex((index) => (index + 1) % maker.systems.length);
         if (key === 'ArrowLeft') setSystemIndex((index) => (index - 1 + maker.systems.length) % maker.systems.length);
         if (key === 'ArrowDown') {
-          setMakerIndex((index) => (index + 1) % MAKERS.length);
+          setMakerIndex((index) => (index + 1) % makers.length);
           setSystemIndex(0);
         }
         if (key === 'ArrowUp') {
-          setMakerIndex((index) => (index - 1 + MAKERS.length) % MAKERS.length);
+          setMakerIndex((index) => (index - 1 + makers.length) % makers.length);
           setSystemIndex(0);
         }
       } else if (key === 'ArrowRight' || key === 'ArrowLeft' || key === 'ArrowDown' || key === 'ArrowUp') {
@@ -264,29 +342,30 @@ export function EmulationView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [screen, maker.systems.length, games.length, navigate, selected.id, book]);
+  }, [screen, maker.systems.length, games.length, navigate, selected.id, book, makers.length]);
 
   const launchSelected = async () => {
-    const rom = book.roms[selected.id];
-    const exe = book.emulator;
-    if (!rom || !exe) {
-      setNotice('Add the emulator and a ROM you own, then press A.');
-      setScreen('detail');
+    if (!selected.romPath) {
+      setNotice('That cover is only a poster. Put your copy in the ROM folder, then play it from Your games.');
       return;
     }
-    const api = (window as unknown as { api?: { emulator?: { launchRom?: (id: string, rom: string, args?: string[]) => Promise<{ success: boolean; error?: string }> } } }).api;
-    const result = await api?.emulator?.launchRom?.('retroarch', rom, [exe]);
-    if (!result?.success) {
-      setNotice(result?.error || 'Could not start the emulator.');
-      return;
+    const api = (window as unknown as { api?: { emudeck?: { play?: (rom: string) => Promise<{ ok?: boolean; emulator?: string; error?: string }> } } }).api;
+    try {
+      const result = await api?.emudeck?.play?.(selected.romPath);
+      if (result && result.ok === false) {
+        setNotice(result.error || 'Could not start the game.');
+        return;
+      }
+      const stamp = new Date().toLocaleString();
+      setBook((current) => ({
+        ...current,
+        plays: { ...current.plays, [selected.id]: (current.plays[selected.id] || 0) + 1 },
+        last: { ...current.last, [selected.id]: stamp },
+      }));
+      setNotice(`Playing ${selected.name} in PartyUp. Close the game to come back.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not start the game.');
     }
-    const stamp = new Date().toLocaleString();
-    setBook((current) => ({
-      ...current,
-      plays: { ...current.plays, [selected.id]: (current.plays[selected.id] || 0) + 1 },
-      last: { ...current.last, [selected.id]: stamp },
-    }));
-    setNotice(`Started ${selected.name}`);
   };
 
   const playedIds = games.filter((item) => book.plays[item.id]);
@@ -391,25 +470,11 @@ export function EmulationView() {
                   </div>
                   <p>{selected.blurb}</p>
                   <em>{selected.publisher}</em>
-                  <label>
-                    Emulator
-                    <input
-                      value={book.emulator}
-                      placeholder="D:\Emulators\retroarch.exe"
-                      aria-label="Emulator path"
-                      onChange={(event) => setBook((current) => ({ ...current, emulator: event.target.value }))}
-                    />
-                  </label>
-                  <label>
-                    ROM
-                    <input
-                      value={book.roms[selected.id] || ''}
-                      placeholder="D:\ROMs\game.zip"
-                      aria-label="ROM path"
-                      onChange={(event) => setBook((current) => ({ ...current, roms: { ...current.roms, [selected.id]: event.target.value } }))}
-                    />
-                  </label>
-                  <button type="button" onClick={() => void launchSelected()}>Launch</button>
+                  {selected.romPath ? (
+                    <button type="button" onClick={() => void launchSelected()}>Play in PartyUp</button>
+                  ) : (
+                    <p>This is box art only. Add the ROM you own in Setup, then open Your games.</p>
+                  )}
                   {notice ? <p>{notice}</p> : null}
                 </div>
               </div>
@@ -432,7 +497,7 @@ export function EmulationView() {
               <button type="button" aria-label="Manual" title="About this game" onClick={() => setScreen('detail')}>📖</button>
               <button type="button" aria-label="Favorite" title="Favorite" onClick={() => setBook((current) => ({ ...current, ratings: { ...current.ratings, [selected.id]: 5 } }))}>🏆</button>
               <button type="button" aria-label="Launch" title="Launch" onClick={() => void launchSelected()}>💾</button>
-              <div className="rb-year">{selected.year}</div>
+              <div className="rb-year">{selected.year || ''}</div>
               <div className="rb-flag" title={selected.region} />
             </aside>
           </div>

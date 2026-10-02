@@ -3,7 +3,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { describe, expect, it } from 'vitest';
 import { compressIsoToCso, decompressCso } from '../../src/main/services/emudeck/cso';
-import { accountFolder, addRomsToSteam, buildFolders, extractZip, parseMostRecentUser, pickAsset, scanBios, scanRoms, setManualEmulator } from '../../src/main/services/emudeck/engine';
+import { accountFolder, addRomsToSteam, buildFolders, extractZip, launchCommand, parseMostRecentUser, pickAsset, scanBios, scanRoms, setManualEmulator } from '../../src/main/services/emudeck/engine';
 import { crc32, readShortcutVdf, steamAppId, writeShortcutVdf, shortcutFor } from '../../src/main/services/emudeck/vdf';
 
 function tempRoot() {
@@ -101,12 +101,28 @@ describe('EmuDeck tools', () => {
     expect(parsed.shortcuts['0'].AppName).toBe('Link');
   });
 
+  it('launches a ROM with the installed emulator instead of Steam', () => {
+    const root = tempRoot();
+    buildFolders(root);
+    const rom = join(root, 'roms', 'snes', 'Link.sfc');
+    writeFileSync(rom, 'game');
+    const exe = join(root, 'retroarch.exe');
+    writeFileSync(exe, 'exe');
+    mkdirSync(join(root, 'cores'), { recursive: true });
+    writeFileSync(join(root, 'cores', 'snes9x_libretro.dll'), 'core');
+    setManualEmulator(root, 'retroarch', exe);
+    const plan = launchCommand(root, rom);
+    expect(plan.emulator).toBe('retroarch');
+    expect(plan.exe).toBe(exe);
+    expect(plan.args[0]).toBe('-f');
+    expect(plan.args[2]).toContain('snes9x_libretro.dll');
+    expect(plan.args[3]).toBe(rom);
+  });
+
   it('extracts a zip into the emulator folder', async () => {
     const root = tempRoot();
     const zip = join(root, 'pack.zip');
-    const payload = Buffer.from('PK\x03\x04', 'latin1');
     writeFileSync(zip, storedZip('retroarch.exe', Buffer.from('MZ-fake')));
-    expect(payload[0]).toBe(0x50);
     await extractZip(zip, join(root, 'out'));
     expect(readFileSync(join(root, 'out', 'retroarch.exe')).toString()).toBe('MZ-fake');
   });

@@ -41,6 +41,7 @@ type DeckApi = {
   installCore: (core: string) => Promise<unknown>;
   compress: (kind: 'cso' | 'chd' | 'rvz') => Promise<{ converted: unknown[]; skipped: number }>;
   steamAdd: () => Promise<{ added: number; warning?: string; missing?: string[] }>;
+  play: (romPath: string) => Promise<{ ok?: boolean; emulator?: string }>;
   setEmulator: (id: string, exe: string) => Promise<unknown>;
   openRoot: () => Promise<unknown>;
 };
@@ -178,13 +179,12 @@ export function EmuDeckPanel({ onClose }: { onClose: () => void }) {
       </section>
 
       <section>
-        <h3>Compression and Steam</h3>
-        <p>{roms.length} games in the ROM folders. Original files stay where they are.</p>
+        <h3>Your games</h3>
+        <p>{roms.length} games in the ROM folders. Choose one on the console screen. It plays here, not in Steam.</p>
         <div className="rb-actions">
           <button type="button" disabled={Boolean(busy)} onClick={() => void run('cso', async () => { const result = await deckApi()?.compress('cso'); setLog(`CSO finished. ${result?.converted.length || 0} converted, ${result?.skipped || 0} already done.`); })}>PSP ISO to CSO</button>
           <button type="button" disabled={Boolean(busy)} onClick={() => void run('chd', async () => { const result = await deckApi()?.compress('chd'); setLog(`CHD finished. ${result?.converted.length || 0} converted. chdman comes from official MAME.`); })}>Discs to CHD</button>
           <button type="button" disabled={Boolean(busy)} onClick={() => void run('rvz', async () => { const result = await deckApi()?.compress('rvz'); setLog(`RVZ finished. ${result?.converted.length || 0} converted.`); })}>GameCube and Wii to RVZ</button>
-          <button type="button" disabled={Boolean(busy)} onClick={() => void run('steam', async () => { const result = await deckApi()?.steamAdd(); setLog(result?.warning || `Added ${result?.added || 0} games to Steam.`); })}>Add to Steam</button>
         </div>
         <div className="rb-rows">
           {roms.slice(0, 12).map((rom) => (
@@ -196,14 +196,10 @@ export function EmuDeckPanel({ onClose }: { onClose: () => void }) {
               <button
                 type="button"
                 onClick={() => {
-                  const exe = status?.emulators.find((item) => item.id === rom.emulator)?.exe;
-                  const launch = (window as unknown as { api?: { system?: { launch?: (exe: string, args?: string[]) => Promise<unknown> } } }).api?.system?.launch;
-                  if (!exe || !launch) {
-                    setLog(`Install ${rom.emulator} before launching ${rom.name}.`);
-                    return;
-                  }
-                  void launch(exe, [rom.path]);
-                  setLog(`Started ${rom.name}`);
+                  void deckApi()
+                    ?.play(rom.path)
+                    .then(() => setLog(`Playing ${rom.name} in PartyUp. Close the game to come back.`))
+                    .catch((error: unknown) => setLog(error instanceof Error ? error.message : 'Could not start the game.'));
                 }}
               >
                 Play

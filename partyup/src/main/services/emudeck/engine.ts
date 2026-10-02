@@ -1,4 +1,4 @@
-import { spawnSync } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import { chmodSync, copyFileSync, createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs';
 import { createRequire } from 'module';
 import { homedir } from 'os';
@@ -492,6 +492,77 @@ export function addShortcuts(file: string, records: ShortcutRecord[]) {
   });
   writeFileSync(file, writeShortcutVdf(next));
   return { file, count: kept.length };
+}
+
+const RETRO_CORE: Record<string, string> = {
+  nes: 'fceumm',
+  snes: 'snes9x',
+  gb: 'gambatte',
+  gbc: 'gambatte',
+  gba: 'mgba',
+  mastersystem: 'genesis_plus_gx',
+  megadrive: 'genesis_plus_gx',
+  gamegear: 'genesis_plus_gx',
+  segacd: 'genesis_plus_gx',
+  n64: 'mupen64plus_next',
+  atari2600: 'stella',
+  arcade: 'fbneo',
+  mame: 'fbneo',
+  saturn: 'beetle_saturn',
+  pcengine: 'beetle_pce_fast',
+  psx: 'beetle_psx_hw',
+  dreamcast: 'flycast',
+  nds: 'melonds',
+};
+
+function retroArgs(exe: string, system: string, romPath: string): string[] {
+  const core = RETRO_CORE[system];
+  const dll = core ? join(dirname(exe), 'cores', `${core}_libretro.dll`) : '';
+  if (dll && existsSync(dll)) return ['-f', '-L', dll, romPath];
+  return ['-f', romPath];
+}
+
+export function launchCommand(root: string, romPath: string): { exe: string; args: string[]; emulator: string; name: string } {
+  if (!romPath || !existsSync(romPath)) throw new Error('That game is not on this PC.');
+  const hit = scanRoms(root).find((rom) => rom.path === romPath);
+  if (!hit) throw new Error('Put the game in one of the ROM folders, then play it from Your games.');
+  const manifest = readManifest(root);
+  const preferred = manifest.emulators[hit.emulator];
+  const retro = manifest.emulators.retroarch;
+  let emulator = hit.emulator;
+  let exe = preferred?.exe && existsSync(preferred.exe) ? preferred.exe : '';
+  if (!exe && retro?.exe && existsSync(retro.exe)) {
+    emulator = 'retroarch';
+    exe = retro.exe;
+  }
+  if (!exe) throw new Error(`Install ${hit.emulator} in Setup. Play stays in PartyUp, not Steam.`);
+  const args =
+    emulator === 'retroarch'
+      ? retroArgs(exe, hit.system, romPath)
+      : emulator === 'dolphin' || emulator === 'primehack'
+        ? ['-b', '-e', romPath]
+        : emulator === 'pcsx2'
+          ? ['-batch', romPath]
+          : emulator === 'duckstation'
+            ? ['-batch', '-fullscreen', romPath]
+            : emulator === 'ppsspp'
+              ? ['--fullscreen', romPath]
+              : emulator === 'mgba'
+                ? ['-f', romPath]
+                : emulator === 'cemu'
+                  ? ['-f', '-g', romPath]
+                  : emulator === 'rpcs3'
+                    ? ['--no-gui', romPath]
+                    : [romPath];
+  return { exe, args, emulator, name: hit.name };
+}
+
+export function startRom(root: string, romPath: string, onExit?: (code: number | null) => void) {
+  const plan = launchCommand(root, romPath);
+  const child = spawn(plan.exe, plan.args, { cwd: dirname(plan.exe), stdio: 'ignore', windowsHide: false });
+  child.on('error', () => onExit?.(null));
+  child.on('exit', (code) => onExit?.(code));
+  return { ok: true, pid: child.pid || 0, emulator: plan.emulator, name: plan.name, exe: plan.exe };
 }
 
 export function addRomsToSteam(root: string, steamRoot?: string | null) {

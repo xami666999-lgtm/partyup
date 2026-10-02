@@ -9,6 +9,7 @@ import {
   scanBios,
   scanRoms,
   setManualEmulator,
+  startRom,
   suggestRoot,
 } from './emudeck/engine.js';
 import { compressLibrary } from './emudeck/engine.js';
@@ -76,6 +77,10 @@ export class EmuDeckService {
 
   async compress(kind: 'cso' | 'chd' | 'rvz') {
     return compressLibrary(this.root, kind, (progress) => this.progress(progress));
+  }
+
+  play(romPath: string, onExit?: (code: number | null) => void) {
+    return startRom(this.root, romPath, onExit);
   }
 
   steamAdd() {

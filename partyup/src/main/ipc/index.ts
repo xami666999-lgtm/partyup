@@ -126,6 +126,15 @@ export function setupIpcHandlers(
   handle('emudeck:install', async (id: string) => services.emudeck?.install(String(id || '')));
   handle('emudeck:install-core', async (core: string) => services.emudeck?.installCore(String(core || '')));
   handle('emudeck:compress', async (kind: string) => services.emudeck?.compress(kind as 'cso' | 'chd' | 'rvz'));
+  handle('emudeck:play', async (romPath: string) =>
+    services.emudeck?.play(String(romPath || ''), () => {
+      if (mainWindow.isDestroyed()) return;
+      mainWindow.webContents.send('emudeck:exited', {});
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+    }),
+  );
   handle('emudeck:steam-add', async () => services.emudeck?.steamAdd());
   handle('emudeck:set-emulator', async (id: string, exe: string) => services.emudeck?.setEmulatorPath(String(id || ''), String(exe || '')));
   handle('emudeck:open-root', async () => {

@@ -207,6 +207,7 @@ settings: {
     setRoot: (root: string) => handler('emudeck:set-root', root),
     buildFolders: () => handler('emudeck:build-folders'),
     scan: () => handler('emudeck:scan'),
+    play: (romPath: string) => handler('emudeck:play', romPath),
     bios: () => handler('emudeck:bios'),
     install: (id: string) => handler('emudeck:install', id),
     installCore: (core: string) => handler('emudeck:install-core', core),

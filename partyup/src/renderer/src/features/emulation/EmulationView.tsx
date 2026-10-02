@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './retro.scss';
 import { EmuDeckPanel } from './EmuDeckPanel';
+import { ConsoleLogo } from './logos';
+import { ConsoleStore, UiTheme } from './ConsoleStore';
 
 type Game = {
   id: string;
@@ -233,6 +235,16 @@ export function EmulationView() {
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(() => new Date());
   const [library, setLibrary] = useState<OwnedRom[]>([]);
+  const [theme, setTheme] = useState<UiTheme | 'classic'>(() => {
+    const saved = localStorage.getItem('partyup-ui-theme');
+    if (saved === 'x360' || saved === 'ps2' || saved === 'classic' || saved === 'ps5') return saved;
+    return 'ps5';
+  });
+
+  const chooseTheme = (next: UiTheme | 'classic') => {
+    localStorage.setItem('partyup-ui-theme', next);
+    setTheme(next);
+  };
 
   const makers = useMemo(() => {
     const grouped = new Map<string, OwnedRom[]>();
@@ -296,8 +308,8 @@ export function EmulationView() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const key = event.key;
-      if (screen === 'setup') {
-        if (key === 'Escape') setScreen('console');
+      if (screen === 'setup' || theme !== 'classic') {
+        if (screen === 'setup' && key === 'Escape') setScreen('console');
         return;
       }
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Backspace', 'Escape'].includes(key)) {
@@ -342,7 +354,7 @@ export function EmulationView() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [screen, maker.systems.length, games.length, navigate, selected.id, book, makers.length]);
+  }, [screen, maker.systems.length, games.length, navigate, selected.id, book, makers.length, theme]);
 
   const launchSelected = async () => {
     if (!selected.romPath) {
@@ -382,6 +394,14 @@ export function EmulationView() {
     <div className="rb">
       {screen === 'setup' ? (
         <EmuDeckPanel onClose={() => setScreen('console')} />
+      ) : theme !== 'classic' ? (
+        <ConsoleStore
+          theme={theme}
+          onTheme={chooseTheme}
+          onClassic={() => chooseTheme('classic')}
+          onSetup={() => setScreen('setup')}
+          onClose={() => navigate('/library')}
+        />
       ) : screen === 'console' ? (
         <>
           <div className="rb-top">
@@ -402,7 +422,7 @@ export function EmulationView() {
                 className={`rb-logo${index === systemIndex ? ' selected' : ''}`}
                 onClick={() => setSystemIndex(index)}
               >
-                <Word system={item} />
+                <ConsoleLogo id={item.className} title={item.word} />
               </button>
             ))}
           </div>
@@ -419,7 +439,7 @@ export function EmulationView() {
         <>
           <div className="rb-top" style={{ minHeight: 92, justifyContent: 'center' }}>
             <div className="rb-system-logo">
-              <Word system={system} />
+              <ConsoleLogo id={system.className} title={system.word} />
             </div>
             <div style={{ position: 'absolute', right: 28, top: 22 }}>
               <Wifi />
@@ -524,6 +544,9 @@ export function EmulationView() {
               <span><i className="pad a" />CHOOSE</span>
             </>
           )}
+          <button type="button" onClick={() => chooseTheme('ps5')} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>PS5</button>
+          <button type="button" onClick={() => chooseTheme('x360')} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>360</button>
+          <button type="button" onClick={() => chooseTheme('ps2')} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>PS2</button>
           <button type="button" onClick={() => setScreen('setup')} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>
             Setup
           </button>
@@ -535,21 +558,6 @@ export function EmulationView() {
       </footer>
     </div>
   );
-}
-
-function Word({ system }: { system: System }) {
-  if (system.className === 'snes') {
-    return (
-      <span className="rb-word snes">
-        <i style={{ background: '#e23b3b' }} />
-        <i style={{ background: '#f0c418' }} />
-        <i style={{ background: '#3b82f6' }} />
-        <i style={{ background: '#22a85a' }} />
-        SUPER NES
-      </span>
-    );
-  }
-  return <span className={`rb-word ${system.className}`}>{system.word}</span>;
 }
 
 function Wifi() {

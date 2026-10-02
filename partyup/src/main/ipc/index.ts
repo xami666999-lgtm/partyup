@@ -29,6 +29,7 @@ export interface Services {
   friends: any;
   bigPicture: any;
   themeMarketplace: any;
+  emudeck: any;
 }
 
 export function setupIpcHandlers(
@@ -94,17 +95,44 @@ export function setupIpcHandlers(
   handle('torrent:get-hydra-sources', async () => services.torrent?.getHydraSources());
   handle('torrent:search-hydra', async (query: string) => services.torrent?.searchHydra(query));
 
-  // Emulator handlers
-  handle('emulator:get-emulators', async () => services.emulator?.getEmulators());
+  services.emudeck?.setProgress((payload: { id: string; message: string; received?: number; total?: number }) => {
+    if (!mainWindow.isDestroyed()) mainWindow.webContents.send('emudeck:progress', payload);
+  });
+
+  handle('emulator:get-emulators', async () => services.emudeck?.status().emulators || services.emulator?.getEmulators());
   handle('emulator:detect-emulators', async () => services.emulator?.detectEmulators());
   handle('emulator:launch-rom', async (emulatorId: string, romPath: string, args?: string[]) =>
     services.emulator?.launchRom(emulatorId, romPath, args)
   );
   handle('emulator:get-roms', async (system?: string) => services.emulator?.getRoms(system));
-  handle('emulator:scan-roms', async (paths: string[]) => services.emulator?.scanRoms(paths));
-  handle('emulator:get-retroarch-cores', async () => services.emulator?.getRetroArchCores());
-  handle('emulator:install-core', async (coreName: string) => services.emulator?.installCore(coreName));
-  handle('emulator:update-cores', async () => services.emulator?.updateCores());
+  handle('emulator:scan-roms', async () => services.emudeck?.scan() || services.emulator?.scanRoms([]));
+  handle('emulator:get-retroarch-cores', async () => services.emudeck?.cores() || services.emulator?.getRetroArchCores());
+  handle('emulator:install-core', async (coreName: string) => services.emudeck?.installCore(String(coreName || '')));
+  handle('emulator:update-cores', async () => {
+    const cores = services.emudeck?.cores() || [];
+    const updated: string[] = [];
+    for (const core of cores) {
+      await services.emudeck?.installCore(core);
+      updated.push(core);
+    }
+    return { success: true, updated: updated.length };
+  });
+
+  handle('emudeck:status', async () => services.emudeck?.status());
+  handle('emudeck:set-root', async (root: string) => services.emudeck?.setRoot(String(root || '')));
+  handle('emudeck:build-folders', async () => services.emudeck?.buildFolders());
+  handle('emudeck:scan', async () => services.emudeck?.scan());
+  handle('emudeck:bios', async () => services.emudeck?.bios());
+  handle('emudeck:install', async (id: string) => services.emudeck?.install(String(id || '')));
+  handle('emudeck:install-core', async (core: string) => services.emudeck?.installCore(String(core || '')));
+  handle('emudeck:compress', async (kind: string) => services.emudeck?.compress(kind as 'cso' | 'chd' | 'rvz'));
+  handle('emudeck:steam-add', async () => services.emudeck?.steamAdd());
+  handle('emudeck:set-emulator', async (id: string, exe: string) => services.emudeck?.setEmulatorPath(String(id || ''), String(exe || '')));
+  handle('emudeck:open-root', async () => {
+    const root = services.emudeck?.status().root as string;
+    if (root) await shell.openPath(root);
+    return root;
+  });
 
   // ROM handlers
   handle('roms:get-metadata', async (romPath: string) => services.metadata?.getRomMetadata(romPath));

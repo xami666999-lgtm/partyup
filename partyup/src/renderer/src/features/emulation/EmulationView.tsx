@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './retro.scss';
+import { EmuDeckPanel } from './EmuDeckPanel';
 
 type Game = {
   id: string;
@@ -192,7 +193,7 @@ function loadBook(): PlayBook {
 
 export function EmulationView() {
   const navigate = useNavigate();
-  const [screen, setScreen] = useState<'console' | 'grid' | 'detail'>('console');
+  const [screen, setScreen] = useState<'console' | 'grid' | 'detail' | 'setup'>('console');
   const [makerIndex, setMakerIndex] = useState(0);
   const [systemIndex, setSystemIndex] = useState(0);
   const [gameIndex, setGameIndex] = useState(0);
@@ -218,6 +219,10 @@ export function EmulationView() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const key = event.key;
+      if (screen === 'setup') {
+        if (key === 'Escape') setScreen('console');
+        return;
+      }
       if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Enter', 'Backspace', 'Escape'].includes(key)) {
         event.preventDefault();
       }
@@ -296,7 +301,9 @@ export function EmulationView() {
 
   return (
     <div className="rb">
-      {screen === 'console' ? (
+      {screen === 'setup' ? (
+        <EmuDeckPanel onClose={() => setScreen('console')} />
+      ) : screen === 'console' ? (
         <>
           <div className="rb-top">
             <div className="rb-maker">
@@ -452,6 +459,9 @@ export function EmulationView() {
               <span><i className="pad a" />CHOOSE</span>
             </>
           )}
+          <button type="button" onClick={() => setScreen('setup')} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>
+            Setup
+          </button>
           <button type="button" onClick={() => (screen === 'console' ? navigate('/library') : setScreen(screen === 'detail' ? 'grid' : 'console'))} style={{ border: 0, background: 'transparent', color: 'inherit', cursor: 'pointer' }}>
             {screen === 'console' ? 'Leave' : 'Back'}
           </button>

@@ -1,6 +1,6 @@
 {
   "name": "partyup",
-  "version": "2.5.4",
+  "version": "2.6.0",
   "description": "PartyUp - Unified Game Launcher with Steam, Emulation, Mods, Multiplayer, Cloud Gaming & Hoard-style Save Sync",
   "main": "dist/main/index.js",
   "scripts": {
@@ -61,6 +61,7 @@
     "@typescript-eslint/eslint-plugin": "^6.13.0",
     "@typescript-eslint/parser": "^6.13.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "7zip-bin": "^5.2.0",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.2",
     "chart.js": "^4.4.1",

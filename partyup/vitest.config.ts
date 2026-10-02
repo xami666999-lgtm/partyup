@@ -4,6 +4,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  css: { postcss: { plugins: [] } },
   test: {
     environment: 'happy-dom',
     globals: true,

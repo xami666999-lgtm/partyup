@@ -391,3 +391,114 @@
 .pad.start,
 .pad.select { width: 18px; height: 10px; border-radius: 3px; background: #8d99a6; }
 .pad.dir { background: #d0d5dd; }
+
+.rb-setup {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 22px 32px 8px;
+  text-align: left;
+}
+
+.rb-setup-head,
+.rb-root,
+.rb-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rb-setup h2 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+}
+
+.rb-setup h3 {
+  margin: 18px 0 8px;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.rb-setup p,
+.rb-row span,
+.rb-row small {
+  color: #c5d0e0;
+}
+
+.rb-setup p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.rb-log {
+  margin: 12px 0;
+  color: #9ec0ff !important;
+}
+
+.rb-root {
+  margin-top: 12px;
+}
+
+.rb-root input,
+.rb-row input {
+  min-width: 280px;
+  min-height: 34px;
+  border: 1px solid #2c4060;
+  border-radius: 6px;
+  background: #0b121c;
+  color: #e8eef8;
+  padding: 0 8px;
+}
+
+.rb-setup button {
+  border: 0;
+  border-radius: 6px;
+  background: #3d7dff;
+  color: white;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.rb-setup button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.rb-rows {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rb-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(120, 160, 220, 0.18);
+  border-radius: 8px;
+  background: rgba(8, 16, 28, 0.55);
+}
+
+.rb-row.ok {
+  border-color: rgba(80, 180, 120, 0.45);
+}
+
+.rb-row b,
+.rb-row span,
+.rb-row small {
+  display: block;
+}
+
+.rb-row span,
+.rb-row small {
+  font-size: 12px;
+}
+
+.rb-actions {
+  margin: 8px 0;
+}

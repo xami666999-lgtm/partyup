@@ -39,7 +39,7 @@ jobs:
         run: |
           VERSION=$(node -p "require('./package.json').version")
           if ! gh release view "v$VERSION" >/dev/null 2>&1; then
-            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "Settings can follow any owner/repo. A push of a higher version publishes the installer for every installed copy."
+            gh release create "v$VERSION" --title "PartyUp $VERSION" --notes "EmuDeck setup can install emulators, create ROM folders, check BIOS, compress games you already have, and add them to Steam. BIOS and games are never downloaded."
           fi
           gh release upload "v$VERSION" dist/*.exe dist/*.zip --clobber
         env:

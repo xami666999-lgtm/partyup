@@ -202,6 +202,19 @@ settings: {
     backup: (target: string) => handler('system:backup', target),
     download: (url: string) => handler('system:download', url),
   },
+  emudeck: {
+    status: () => handler('emudeck:status'),
+    setRoot: (root: string) => handler('emudeck:set-root', root),
+    buildFolders: () => handler('emudeck:build-folders'),
+    scan: () => handler('emudeck:scan'),
+    bios: () => handler('emudeck:bios'),
+    install: (id: string) => handler('emudeck:install', id),
+    installCore: (core: string) => handler('emudeck:install-core', core),
+    compress: (kind: 'cso' | 'chd' | 'rvz') => handler('emudeck:compress', kind),
+    steamAdd: () => handler('emudeck:steam-add'),
+    setEmulator: (id: string, exe: string) => handler('emudeck:set-emulator', id, exe),
+    openRoot: () => handler('emudeck:open-root'),
+  },
 });
 
 declare global {

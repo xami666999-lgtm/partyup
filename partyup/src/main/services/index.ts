@@ -21,6 +21,7 @@ import { PlaytimeService } from './PlaytimeService.js';
 import { FriendsService } from './FriendsService.js';
 import { BigPictureService } from './BigPictureService.js';
 import { ThemeMarketplaceService } from './ThemeMarketplaceService.js';
+import { EmuDeckService } from './EmuDeckService.js';
 
 type StoreType = InstanceType<typeof Store>;
 
@@ -45,6 +46,7 @@ export interface Services {
   friends: FriendsService;
   bigPicture: BigPictureService;
   themeMarketplace: ThemeMarketplaceService;
+  emudeck: EmuDeckService;
 }
 
 type ServiceConstructor = new (...args: any[]) => any;
@@ -75,12 +77,13 @@ export async function initializeServices(
     friends: new FriendsService(database) as FriendsService,
     bigPicture: new BigPictureService(database) as BigPictureService,
     themeMarketplace: new ThemeMarketplaceService(database) as ThemeMarketplaceService,
+    emudeck: new EmuDeckService(),
   };
 
   const initPromises = Object.entries(services).map(async ([name, service]) => {
     if (service && typeof (service as any).initialize === 'function') {
       try {
-        await (service as any).initialize();
+        await (service as any).initialize(store, database, pluginManager);
         console.log(`Service ${name} initialized`);
       } catch (error) {
         console.error(`Failed to initialize ${name}:`, error);

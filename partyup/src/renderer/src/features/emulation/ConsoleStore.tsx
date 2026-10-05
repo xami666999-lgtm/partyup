@@ -7,7 +7,27 @@ export type UiTheme = 'ps5' | 'x360' | 'ps2';
 
 type Owned = { system: string; label: string; name: string; path: string; emulator: string };
 
-const INSTALLED_KEY = 'partyup-store-installed';
+const EMULATOR_NAME: Record<string, string> = {
+  retroarch: 'RetroArch',
+  mgba: 'mGBA',
+  melonds: 'melonDS',
+  azahar: 'Azahar',
+  dolphin: 'Dolphin',
+  cemu: 'Cemu',
+  ryujinx: 'Ryujinx',
+  duckstation: 'DuckStation',
+  pcsx2: 'PCSX2',
+  rpcs3: 'RPCS3',
+  ppsspp: 'PPSSPP',
+  vita3k: 'Vita3K',
+  flycast: 'Flycast',
+  xemu: 'xemu',
+  xenia: 'Xenia',
+};
+
+function mobyUrl(name: string) {
+  return `https://www.mobygames.com/search/?q=${encodeURIComponent(name)}`;
+}
 
 function loadInstalled(): string[] {
   try {
@@ -17,6 +37,8 @@ function loadInstalled(): string[] {
     return [];
   }
 }
+
+const INSTALLED_KEY = 'partyup-store-installed';
 
 function deck() {
   return (window as unknown as {
@@ -37,14 +59,16 @@ export function ConsoleStore({
   onClassic,
   onSetup,
   onClose,
+  startSystem = STORE_SYSTEMS[0].id,
 }: {
   theme: UiTheme;
   onTheme: (theme: UiTheme) => void;
   onClassic: () => void;
   onSetup: () => void;
   onClose: () => void;
+  startSystem?: string;
 }) {
-  const [systemId, setSystemId] = useState(STORE_SYSTEMS[0].id);
+  const [systemId, setSystemId] = useState(startSystem);
   const [index, setIndex] = useState(0);
   const [installed, setInstalled] = useState<string[]>(loadInstalled);
   const [roms, setRoms] = useState<Owned[]>([]);
@@ -165,21 +189,37 @@ export function ConsoleStore({
         ))}
       </div>
 
-      <section className="hero" style={{ ['--h' as string]: selected.hue }}>
-        <Cover game={selected} large />
-        <div>
-          <ConsoleLogo id={selected.system} title={system.name} />
-          <h1>{selected.name}</h1>
-          <p>{selected.blurb}</p>
-          <em>{selected.publisher} · {selected.year}</em>
-          <div className="hero-actions">
-            <button type="button" className="install" disabled={busy === selected.id} onClick={() => void install(selected)}>
-              {busy === selected.id ? 'Installing' : installed.includes(selected.id) ? 'Installed' : 'Install'}
-            </button>
-            <button type="button" className="play" onClick={() => void play(selected)}>{ready ? 'Play' : 'Your copy'}</button>
+      {theme === 'ps5' ? (
+        <Ps5Shelf
+          systemName={system.name}
+          emulator={EMULATOR_NAME[system.emulator] || system.emulator}
+          games={games}
+          index={index}
+          onPick={setIndex}
+          selected={selected}
+          busy={busy === selected.id}
+          installed={installed.includes(selected.id)}
+          canPlay={Boolean(ready)}
+          onInstall={() => void install(selected)}
+          onPlay={() => void play(selected)}
+        />
+      ) : (
+        <section className="hero" style={{ ['--h' as string]: selected.hue }}>
+          <Cover game={selected} large />
+          <div>
+            <ConsoleLogo id={selected.system} title={system.name} />
+            <h1>{selected.name}</h1>
+            <p>{selected.blurb}</p>
+            <em>{selected.publisher} · {selected.year}</em>
+            <div className="hero-actions">
+              <button type="button" className="install" disabled={busy === selected.id} onClick={() => void install(selected)}>
+                {busy === selected.id ? 'Installing' : installed.includes(selected.id) ? 'Installed' : 'Install'}
+              </button>
+              <button type="button" className="play" onClick={() => void play(selected)}>{ready ? 'Play' : 'Your copy'}</button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <p className="shop-note">{notice}</p>
 
       {roms.length ? (
@@ -213,7 +253,7 @@ export function ConsoleStore({
       ) : (
         STORE_SYSTEMS.map((item) => (
           <section className="row-block" key={item.id}>
-            <h2><ConsoleLogo id={item.id} title={item.name} /> {item.name}</h2>
+            <h2><ConsoleLogo id={item.id} title={item.name} /> {item.name} <small>{EMULATOR_NAME[item.emulator] || item.emulator}</small></h2>
             <div className="row-scroller">
               {item.games.map((game, gameIndex) => (
                 <button
@@ -246,5 +286,72 @@ function Cover({ game, large = false }: { game: StoreGame; large?: boolean }) {
       <b>{game.short}</b>
       <small>{game.year}</small>
     </span>
+  );
+}
+
+function Ps5Shelf({
+  systemName,
+  emulator,
+  games,
+  index,
+  onPick,
+  selected,
+  busy,
+  installed,
+  canPlay,
+  onInstall,
+  onPlay,
+}: {
+  systemName: string;
+  emulator: string;
+  games: StoreGame[];
+  index: number;
+  onPick: (index: number) => void;
+  selected: StoreGame;
+  busy: boolean;
+  installed: boolean;
+  canPlay: boolean;
+  onInstall: () => void;
+  onPlay: () => void;
+}) {
+  const around = [-1, 0, 1].map((offset) => {
+    const at = (index + offset + games.length) % games.length;
+    return { game: games[at], at, offset };
+  });
+  return (
+    <div className="ps5-deck">
+      <div className="ps5-brand">
+        <ConsoleLogo id={selected.system} title={systemName} />
+        <span>{emulator}</span>
+      </div>
+      <div className="ps5-stage">
+        <div className="ps5-carousel">
+          {around.map(({ game, at, offset }) => (
+            <button key={`${game.id}-${offset}`} type="button" className={offset === 0 ? 'box on' : 'box'} onClick={() => onPick(at)}>
+              <Cover game={game} large />
+            </button>
+          ))}
+        </div>
+        <div className="ps5-panel">
+          <h2>{selected.name}</h2>
+          <div className="ps5-shot">
+            <Cover game={selected} />
+            <em>Press start</em>
+          </div>
+          <p>{selected.blurb}</p>
+          <strong>{selected.publisher}</strong>
+          <div className="hero-actions">
+            <button type="button" className="install" disabled={busy} onClick={onInstall}>{busy ? 'Installing' : installed ? 'In library' : 'Add'}</button>
+            <button type="button" className="play" onClick={onPlay}>{canPlay ? 'Play' : 'Your copy'}</button>
+            <a href={mobyUrl(selected.name)} target="_blank" rel="noreferrer">MobyGames</a>
+          </div>
+        </div>
+        <aside className="ps5-rail">
+          <span className="ps5-year">{selected.year}</span>
+          <i className="ps5-flag" title="Catalog entry" />
+        </aside>
+      </div>
+      <p className="ps5-fine">Covers are PartyUp boxes, not scanned art. MobyGames opens the real entry. Add does not download the game. It marks the title and installs {emulator}.</p>
+    </div>
   );
 }

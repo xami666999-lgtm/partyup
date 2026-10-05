@@ -308,3 +308,151 @@
   letter-spacing: 0.04em;
   opacity: 0.8;
 }
+
+.ps5-deck {
+  margin: 0 18px 8px;
+  padding: 8px 8px 12px;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(40, 80, 150, 0.35), transparent 55%),
+    linear-gradient(180deg, #070b14, #05070d 70%);
+  border-top: 2px solid #3d7dff;
+  border-bottom: 2px solid #3d7dff;
+}
+
+.ps5-brand {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 8px 0 12px;
+}
+
+.ps5-brand span {
+  color: #9eb6d8;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ps5-stage {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr 56px;
+  align-items: center;
+  min-height: 360px;
+}
+
+.ps5-carousel {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 22px;
+}
+
+.ps5-carousel .box {
+  width: 150px;
+  border: 0;
+  background: transparent;
+  opacity: 0.7;
+  transform: scale(0.86);
+  -webkit-box-reflect: below 8px linear-gradient(transparent 46%, rgba(0, 0, 0, 0.55));
+}
+
+.ps5-carousel .box.on {
+  width: 230px;
+  opacity: 1;
+  transform: none;
+}
+
+.ps5-carousel .cover,
+.ps5-shot .cover {
+  display: flex;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px;
+  background:
+    linear-gradient(160deg, hsl(var(--h) 55% 48%), hsl(calc(var(--h) + 24) 40% 14%));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.ps5-shot .cover {
+  aspect-ratio: 16 / 10;
+}
+
+.ps5-panel h2 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.ps5-shot {
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.ps5-shot em {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: #fff;
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ps5-panel p {
+  margin: 0;
+  color: #d5deea;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ps5-panel strong {
+  display: block;
+  margin: 12px 0;
+  font-weight: 500;
+}
+
+.ps5-panel a {
+  color: #9ec0ff;
+}
+
+.ps5-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  height: 100%;
+  padding-bottom: 12px;
+}
+
+.ps5-year {
+  color: #d5deea;
+  letter-spacing: 0.18em;
+  writing-mode: vertical-rl;
+}
+
+.ps5-flag {
+  width: 22px;
+  height: 14px;
+  background: linear-gradient(#b22234 0 46%, #fff 46% 54%, #b22234 54% 100%);
+  box-shadow: inset 8px 0 0 #3c3b6e;
+}
+
+.ps5-fine {
+  margin: 8px 12px 0;
+  color: #8ea0b8;
+  font-size: 12px;
+}
+
+.row-block h2 small {
+  margin-left: 8px;
+  color: #9eb6d8;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}

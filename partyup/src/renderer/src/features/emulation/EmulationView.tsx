@@ -4,131 +4,12 @@ import './retro.scss';
 import { EmuDeckPanel } from './EmuDeckPanel';
 import { ConsoleLogo } from './logos';
 import { ConsoleStore, UiTheme } from './ConsoleStore';
+import { CONSOLE_FOLDER, MAKERS, type Poster } from './systems';
 
-type Game = {
-  id: string;
-  name: string;
-  short: string;
-  year: number;
-  publisher: string;
-  region: string;
-  players: string;
-  blurb: string;
-  hue: number;
-  stars: number;
+type Game = Poster & {
   romPath?: string;
   emulatorId?: string;
 };
-
-type System = {
-  id: string;
-  word: string;
-  className: string;
-  year: number;
-  games: Game[];
-};
-
-type Maker = {
-  id: string;
-  name: string;
-  line: string;
-  year: number;
-  systems: System[];
-};
-
-const MAKERS: Maker[] = [
-  {
-    id: 'nintendo',
-    name: 'Nintendo',
-    line: 'Nintendo Entertainment System - Famicom',
-    year: 1983,
-    systems: [
-      {
-        id: 'nes',
-        word: 'NES',
-        className: 'nes',
-        year: 1983,
-        games: [
-          game('nes-mario', 'Super Mario Bros.', 'Mario', 1985, 'Nintendo', 12, 5, 'Run, jump, and clear eight worlds. A second player can take the next life.'),
-          game('nes-zelda', 'The Legend of Zelda', 'Zelda', 1986, 'Nintendo', 90, 5, 'Explore an overworld, find the pieces of the Triforce, and bring down Ganon.'),
-          game('nes-metroid', 'Metroid', 'Metroid', 1986, 'Nintendo', 200, 4, 'Samus hunts Metroids through a maze of corridors on Zebes.'),
-          game('nes-kirby', 'Kirby’s Adventure', 'Kirby', 1993, 'Nintendo', 310, 4, 'Inhale enemies, copy their ability, and put the dream fountain back together.'),
-          game('nes-punch', 'Punch-Out!!', 'Punch-Out', 1987, 'Nintendo', 28, 4, 'Dodge, block, and land a star punch before the round ends.'),
-          game('nes-mega', 'Mega Man 2', 'Mega Man', 1988, 'Capcom', 210, 5, 'Eight robot masters, then the fortress. The weapons you win come with you.'),
-          game('nes-contra', 'Contra', 'Contra', 1988, 'Konami', 0, 4, 'A side-scrolling run. Spread shot, and do not stop moving.'),
-          game('nes-excite', 'Excitebike', 'Excitebike', 1984, 'Nintendo', 25, 3, 'Time trial motocross. Heat on the engine is the thing that stops you.'),
-        ],
-      },
-      {
-        id: 'snes',
-        word: 'Super NES',
-        className: 'snes',
-        year: 1990,
-        games: [
-          game('snes-mario', 'Super Mario World', 'Mario World', 1990, 'Nintendo', 140, 5, 'Yoshi, a world map, and secret exits off the main path.'),
-          game('snes-link', 'A Link to the Past', 'Zelda', 1991, 'Nintendo', 48, 5, 'Two worlds, one light and one dark, and a master sword between them.'),
-          game('snes-chrono', 'Chrono Trigger', 'Chrono', 1995, 'Square', 265, 5, 'A fair, a portal, and a future you can still change.'),
-          game('snes-dkc', 'Donkey Kong Country', 'DK Country', 1994, 'Nintendo', 18, 4, 'Barrels, mine carts, and a map full of levels.'),
-        ],
-      },
-      {
-        id: 'gb',
-        word: 'Game Boy',
-        className: 'gb',
-        year: 1989,
-        games: [
-          game('gb-tetris', 'Tetris', 'Tetris', 1989, 'Nintendo', 55, 5, 'Four squares at a time. Clear a line before the stack reaches the top.'),
-          game('gb-pokemon', 'Pokémon Red', 'Pokémon', 1996, 'Nintendo', 0, 5, 'A handheld journey. Catch, train, and take on the league.'),
-        ],
-      },
-    ],
-  },
-  {
-    id: 'sega',
-    name: 'Sega',
-    line: 'Sega Master System and Mega Drive',
-    year: 1986,
-    systems: [
-      {
-        id: 'ms',
-        word: 'Master System',
-        className: 'ms',
-        year: 1986,
-        games: [
-          game('ms-cloud', 'Cloud Master', 'Cloud Master', 1989, 'Sega', 18, 3, 'Ride the clouds and clear the path. A short action game from the Master System library.'),
-          game('ms-columns', 'Columns', 'Columns', 1990, 'Sega', 280, 4, 'Stack jewels so three of the same color touch. They can meet sideways, up and down, or on a diagonal.'),
-          game('ms-cyborg', 'Cyborg Hunter', 'Cyborg Hunter', 1988, 'Sega', 210, 3, 'A side-view hunt through a base full of machines.'),
-        ],
-      },
-      {
-        id: 'md',
-        word: 'Mega Drive',
-        className: 'md',
-        year: 1988,
-        games: [
-          game('md-sonic', 'Sonic the Hedgehog', 'Sonic', 1991, 'Sega', 200, 5, 'Loops, springs, and a two-act rush. Do not stop on the spikes.'),
-          game('md-streets', 'Streets of Rage', 'Streets', 1991, 'Sega', 12, 4, 'Three characters, a street, and a boss at the end of the stage.'),
-          game('md-gunstar', 'Gunstar Heroes', 'Gunstar', 1993, 'Treasure', 8, 5, 'A run-and-gun with dice bosses and a weapon you can mix.'),
-          game('md-shinobi', 'Shinobi III', 'Shinobi', 1993, 'Sega', 220, 4, 'Wall jumps, a horse, and a last tower.'),
-          game('md-altered', 'Altered Beast', 'Altered Beast', 1988, 'Sega', 350, 3, 'Rise from the grave, collect spirit balls, and change form.'),
-          game('md-world', 'Another World', 'Another World', 1991, 'Delphine', 260, 4, 'A scientist falls through a particle test into somewhere else.'),
-          game('md-aof', 'Art of Fighting', 'Art of Fighting', 1992, 'SNK', 15, 3, 'A one-on-one fighter. The spirit gauge decides how hard you hit.'),
-          game('md-alex', 'Alex Kidd', 'Alex Kidd', 1989, 'Sega', 40, 3, 'Alex punches blocks and rides through the Enchanted Castle.'),
-        ],
-      },
-      {
-        id: 'gg',
-        word: 'Game Gear',
-        className: 'gg',
-        year: 1990,
-        games: [
-          game('gg-columns', 'Columns', 'Columns', 1990, 'Sega', 280, 4, 'The same jewel puzzle, on the handheld.'),
-          game('gg-sonic', 'Sonic Drift', 'Drift', 1994, 'Sega', 48, 3, 'A short circuit racer with the blue hedgehog.'),
-        ],
-      },
-    ],
-  },
-];
 
 function wrap(index: number, length: number) {
   return ((index % length) + length) % length;
@@ -143,8 +24,6 @@ function ownedGame(rom: { system: string; label: string; name: string; path: str
     short: rom.name,
     year: 0,
     publisher: rom.label,
-    region: 'Your copy',
-    players: '1',
     hue,
     stars: 0,
     blurb: `Plays in PartyUp with ${rom.emulator}. Close the game and you are back on this screen.`,
@@ -153,29 +32,7 @@ function ownedGame(rom: { system: string; label: string; name: string; path: str
   };
 }
 
-const CONSOLE_FOLDER: Record<string, string> = {
-  nes: 'nes',
-  snes: 'snes',
-  gb: 'gb',
-  ms: 'mastersystem',
-  md: 'megadrive',
-  gg: 'gamegear',
-};
-
 type OwnedRom = { system: string; label: string; name: string; path: string; emulator: string };
-
-function game(
-  id: string,
-  name: string,
-  short: string,
-  year: number,
-  publisher: string,
-  hue: number,
-  stars: number,
-  blurb: string,
-): Game {
-  return { id, name, short, year, publisher, region: 'USA', players: '1–2', hue, stars, blurb };
-}
 
 function Hardware({ id }: { id: string }) {
   if (id === 'nes' || id === 'snes' || id === 'gb') {
@@ -235,11 +92,7 @@ export function EmulationView() {
   const [notice, setNotice] = useState('');
   const [now, setNow] = useState(() => new Date());
   const [library, setLibrary] = useState<OwnedRom[]>([]);
-  const [theme, setTheme] = useState<UiTheme | 'classic'>(() => {
-    const saved = localStorage.getItem('partyup-ui-theme');
-    if (saved === 'x360' || saved === 'ps2' || saved === 'classic' || saved === 'ps5') return saved;
-    return 'ps5';
-  });
+  const [theme, setTheme] = useState<UiTheme | 'classic'>('classic');
 
   const chooseTheme = (next: UiTheme | 'classic') => {
     localStorage.setItem('partyup-ui-theme', next);
@@ -253,7 +106,7 @@ export function EmulationView() {
       list.push(rom);
       grouped.set(rom.system, list);
     }
-    const systems: System[] = grouped.size
+    const systems = grouped.size
       ? [...grouped.entries()].map(([id, hits]) => ({
           id,
           word: hits[0].label,
@@ -268,7 +121,16 @@ export function EmulationView() {
             className: 'nes',
             year: 0,
             games: [
-              game('empty', 'No games yet', 'Empty', 2026, 'PartyUp', 210, 0, 'Open Setup, create the ROM folders, and put a game you own in the matching folder. Play starts here.'),
+              {
+                id: 'empty',
+                name: 'No games yet',
+                short: 'Empty',
+                year: 2026,
+                publisher: 'PartyUp',
+                hue: 210,
+                stars: 0,
+                blurb: 'Open Setup, create the ROM folders, and put a game you own in the matching folder. Play starts here.',
+              },
             ],
           },
         ];
@@ -279,7 +141,7 @@ export function EmulationView() {
   const system = maker.systems[Math.min(systemIndex, maker.systems.length - 1)];
   const folder = CONSOLE_FOLDER[system.id] || system.id;
   const owned = library.filter((rom) => rom.system === folder).map(ownedGame);
-  const games = owned.length ? owned : system.games;
+  const games: Game[] = owned.length ? owned : system.games;
   const selected = games[Math.min(gameIndex, Math.max(games.length - 1, 0))];
   const stars = book.ratings[selected.id] ?? selected.stars;
 
@@ -407,20 +269,29 @@ export function EmulationView() {
           <div className="rb-top">
             <div className="rb-maker">
               <h1>{maker.name}</h1>
-              <p>{maker.line}</p>
-              <span>{maker.year}</span>
+              <p>{system.word}</p>
+              <span>{system.year || maker.year}</span>
             </div>
             <Hardware id={system.id} />
             <Wifi />
           </div>
           <div className="rb-rule" />
           <div className="rb-logos">
-            {maker.systems.map((item, index) => (
+            {(maker.systems.length <= 3
+              ? maker.systems.map((item, index) => ({ item, index }))
+              : [-1, 0, 1].map((offset) => {
+                  const index = wrap(systemIndex + offset, maker.systems.length);
+                  return { item: maker.systems[index], index };
+                })
+            ).map(({ item, index }) => (
               <button
-                key={item.id}
+                key={`${item.id}-${index}`}
                 type="button"
                 className={`rb-logo${index === systemIndex ? ' selected' : ''}`}
-                onClick={() => setSystemIndex(index)}
+                onClick={() => {
+                  setSystemIndex(index);
+                  setGameIndex(0);
+                }}
               >
                 <ConsoleLogo id={item.className} title={item.word} />
               </button>
@@ -518,7 +389,7 @@ export function EmulationView() {
               <button type="button" aria-label="Favorite" title="Favorite" onClick={() => setBook((current) => ({ ...current, ratings: { ...current.ratings, [selected.id]: 5 } }))}>🏆</button>
               <button type="button" aria-label="Launch" title="Launch" onClick={() => void launchSelected()}>💾</button>
               <div className="rb-year">{selected.year || ''}</div>
-              <div className="rb-flag" title={selected.region} />
+              <div className="rb-flag" title={selected.romPath ? 'Your copy' : 'Poster'} />
             </aside>
           </div>
         </>

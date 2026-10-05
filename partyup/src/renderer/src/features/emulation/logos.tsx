@@ -126,6 +126,39 @@ function mark(id: string) {
     case 'xbox':
     case 'xbox360':
       return <Xbox id={id} />;
+    case 'gbc':
+      return (
+        <>
+          <rect x="22" y="16" width="176" height="40" rx="18" fill="#6b4cff" />
+          <text x="110" y="42" textAnchor="middle" fill="#fff" fontFamily="Arial Black, sans-serif" fontSize="16">GAME BOY COLOR</text>
+        </>
+      );
+    case 'n3ds':
+      return (
+        <text x="110" y="44" textAnchor="middle" fill="#fff" fontFamily="Arial Black, sans-serif" fontSize="22">NINTENDO 3DS</text>
+      );
+    case 'wiiu':
+      return (
+        <text x="110" y="44" textAnchor="middle" fill="#fff" fontFamily="Arial, sans-serif" fontSize="32" letterSpacing="2">Wii U</text>
+      );
+    case 'switch':
+      return (
+        <>
+          <rect x="28" y="18" width="36" height="36" rx="8" fill="#e10600" />
+          <rect x="70" y="18" width="36" height="36" rx="8" fill="#e10600" />
+          <text x="118" y="44" fill="#fff" fontFamily="Arial, sans-serif" fontSize="22">Switch</text>
+        </>
+      );
+    case 'psvita':
+      return (
+        <>
+          <text x="110" y="44" textAnchor="middle" fill="#fff" fontFamily="Arial, sans-serif" fontSize="26" fontWeight="700">PS VITA</text>
+        </>
+      );
+    case 'scummvm':
+      return (
+        <text x="110" y="44" textAnchor="middle" fill="#f0c418" fontFamily="Arial Black, sans-serif" fontSize="22">SCUMMVM</text>
+      );
     case 'arcade':
       return (
         <text x="110" y="46" textAnchor="middle" fill="#f0c418" fontFamily="Arial Black, sans-serif" fontSize="26">ARCADE</text>

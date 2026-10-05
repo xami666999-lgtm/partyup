@@ -106,6 +106,7 @@ export function EmuDeckPanel({ onClose }: { onClose: () => void }) {
         <button type="button" onClick={onClose}>Back to consoles</button>
       </div>
       <p className="rb-log">{log}</p>
+      <p>Emulators install from their official builds: RetroArch, Dolphin, PCSX2, DuckStation, PPSSPP, and the rest. PartyUp does not download games, BIOS, or keys. Put a copy you own in the matching ROM folder.</p>
       <label className="rb-root">
         Library folder
         <input value={root} aria-label="Emulation folder" onChange={(event) => setRoot(event.target.value)} />
@@ -148,16 +149,20 @@ export function EmuDeckPanel({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           disabled={Boolean(busy)}
-          onClick={() => void run('cores', async () => {
-            await deckApi()?.installCore('snes9x');
-            await deckApi()?.installCore('fceumm');
-            await deckApi()?.installCore('genesis_plus_gx');
-            await deckApi()?.installCore('gambatte');
-            await deckApi()?.installCore('mgba');
-            setLog('NES, Super NES, Mega Drive, Game Boy, and GBA cores are in RetroArch.');
+          onClick={() => void run('all', async () => {
+            const rows = status?.emulators || [];
+            for (const item of rows) {
+              if (item.source === 'manual') continue;
+              setLog(`Installing ${item.name}…`);
+              await deckApi()?.install(item.id);
+            }
+            for (const core of ['fceumm', 'snes9x', 'genesis_plus_gx', 'gambatte', 'mgba', 'mupen64plus_next', 'flycast', 'fbneo']) {
+              await deckApi()?.installCore(core);
+            }
+            setLog('Emulators and common RetroArch cores are installed. Add a game you own, then open Consoles.');
           })}
         >
-          Install common RetroArch cores
+          {busy === 'all' ? 'Installing' : 'Install emulators'}
         </button>
       </section>
 

@@ -7,6 +7,7 @@ import { GameGrid } from './features/library/GameGrid';
 import { GameDetail } from './features/library/GameDetail';
 import { LibraryView } from './features/library/LibraryView';
 import { EmulationView } from './features/emulation/EmulationView';
+import { StorePage } from './features/emulation/StorePage';
 import { SettingsView } from './features/settings/SettingsView';
 import { ThemesView } from './features/themes/ThemesView';
 import { ProfilesView } from './features/profiles/ProfilesView';
@@ -22,6 +23,7 @@ const NAV_ITEMS: SidebarNavItem[] = [
   { id: 'steam', label: 'steam', icon: 'steam', path: '/steam' },
   { id: 'downloads', label: 'downloads', icon: 'download', path: '/downloads' },
   { id: 'emulation', label: 'consoles', icon: 'cpu', path: '/emulation' },
+  { id: 'store', label: 'store', icon: 'store', path: '/store' },
   { id: 'mods', label: 'mods', icon: 'puzzle', path: '/mods' },
   { id: 'multiplayer', label: 'multiplayer', icon: 'users', path: '/multiplayer' },
   { id: 'cloud', label: 'cloud', icon: 'cloud', path: '/cloud' },
@@ -118,6 +120,7 @@ export function App() {
             <Route path="/library/game/:id" element={<GameDetail />} />
             <Route path="/downloads" element={<DownloadsView />} />
             <Route path="/emulation" element={<EmulationView />} />
+            <Route path="/store" element={<StorePage />} />
             <Route path="/mods" element={<ModsView />} />
             <Route path="/multiplayer" element={<MultiplayerView />} />
             <Route path="/cloud" element={<CloudGamingView />} />

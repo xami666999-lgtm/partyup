@@ -1,13 +1,13 @@
 {
   "name": "partyup",
-  "version": "0.1.0",
-  "description": "PartyUp desktop cabinet. RetroArch-style library for games you own.",
-  "main": "dist-electron/main.js",
+  "version": "0.2.0",
+  "description": "PartyUp desktop cabinet. RomM-style library for games you own.",
+  "main": "dist-electron/index.js",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -p tsconfig.node.json && vite build && electron-builder",
-    "start": "electron ."
+    "build": "vite build",
+    "dist:win": "vite build && electron-builder --win nsis --x64"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.2",
@@ -38,6 +38,16 @@
     "appId": "app.partyup.desktop",
     "productName": "PartyUp",
     "files": ["dist", "dist-electron"],
-    "win": { "target": "nsis" }
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PartyUp"
+    }
   }
 }
